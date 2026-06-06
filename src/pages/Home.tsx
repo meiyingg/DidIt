@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { SlidersHorizontal, Wallet, TrendingUp, ListChecks, Ticket } from 'lucide-react'
+import { SlidersHorizontal, Ticket, TrendingUp, TrendingDown } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { priceTask } from '../lib/pricing'
 import { useAuth } from '../contexts/AuthContext'
@@ -12,6 +12,9 @@ import AddTaskForm from '../components/AddTaskForm'
 import WalletHistory from '../components/WalletHistory'
 import WeekChart from '../components/WeekChart'
 import FixedTasksManager from '../components/FixedTasksManager'
+import NumberTicker from '../components/magicui/NumberTicker'
+import BorderBeam from '../components/magicui/BorderBeam'
+import DotPattern from '../components/magicui/DotPattern'
 
 const todayStr = () => new Date().toLocaleDateString('en-CA')
 
@@ -66,7 +69,6 @@ export default function Home() {
   async function after() {
     await Promise.all([load(), refreshProfile()])
   }
-
   async function completeTask(id: string) {
     const { error: e } = await supabase.rpc('complete_task', { p_task_id: id })
     if (e) return setError(e.message)
@@ -94,7 +96,7 @@ export default function Home() {
     await after()
   }
 
-  const { required, custom, doneCount, todayDelta } = useMemo(() => {
+  const { ordered, doneCount, todayDelta } = useMemo(() => {
     const required = tasks.filter((t) => t.type === 'required')
     const custom = tasks.filter((t) => t.type === 'custom')
     const doneCount = tasks.filter((t) => t.done).length
@@ -102,15 +104,15 @@ export default function Home() {
     const todayDelta = logs
       .filter((l) => l.created_at.slice(0, 10) === today)
       .reduce((s, l) => s + Number(l.amount), 0)
-    return { required, custom, doneCount, todayDelta }
+    return { ordered: [...required, ...custom], doneCount, todayDelta }
   }, [tasks, logs])
 
   const balance = profile?.balance ?? 0
   const pct = tasks.length > 0 ? Math.round((doneCount / tasks.length) * 100) : 0
+  const up = todayDelta >= 0
 
   return (
     <div className="animate-fade-up">
-      {/* page header */}
       <header className="mb-6 flex items-end justify-between">
         <div>
           <Label>Overview</Label>
@@ -129,61 +131,72 @@ export default function Home() {
         </div>
       )}
 
-      {/* KPI row */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {/* balance — the one dark, focal tile */}
-        <div className="relative overflow-hidden rounded-2xl bg-zinc-950 p-5 text-white shadow-sm">
-          <div className="pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full bg-violet-600/25 blur-2xl" />
-          <div className="relative flex items-center justify-between">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-white/50">Balance</span>
-            <Wallet size={16} className="text-white/40" />
+      <div className="grid gap-4 lg:grid-cols-3">
+        {/* HERO — balance */}
+        <div className="relative overflow-hidden rounded-2xl bg-zinc-950 p-6 text-white lg:col-span-2">
+          <DotPattern className="text-white/[0.07]" />
+          <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-violet-600/30 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-20 -left-10 h-52 w-52 rounded-full bg-cyan-500/20 blur-3xl" />
+
+          <div className="relative flex items-start justify-between">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-white/50">
+              Total balance
+            </span>
+            <span
+              className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
+                up ? 'bg-emerald-400/15 text-emerald-300' : 'bg-rose-400/15 text-rose-300'
+              }`}
+            >
+              {up ? <TrendingUp size={13} /> : <TrendingDown size={13} />}
+              {up ? '+' : ''}
+              {money(todayDelta)} today
+            </span>
           </div>
-          <p className={`relative mt-2.5 text-2xl font-bold tabular-nums tracking-tight ${balance < 0 ? 'text-rose-400' : 'text-white'}`}>
-            {money(balance)}
-          </p>
-          <p className="relative mt-1 text-xs text-white/40">−¥300 daily at midnight</p>
+
+          <NumberTicker
+            value={balance}
+            decimalPlaces={2}
+            prefix="¥"
+            className={`relative mt-3 block text-5xl font-bold tracking-tight ${
+              balance < 0 ? 'text-rose-400' : 'text-white'
+            }`}
+          />
+          <p className="relative mt-1.5 text-xs text-white/40">−¥300 charged daily at midnight</p>
+
+          {/* inner mini-stats */}
+          <div className="relative mt-6 grid grid-cols-2 gap-3">
+            <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+              <div className="mb-2 flex items-center justify-between text-xs text-white/60">
+                <span>Today's tasks</span>
+                <span className="tabular-nums text-white/80">
+                  {doneCount}/{tasks.length}
+                </span>
+              </div>
+              <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-violet-400 to-cyan-300 transition-all duration-700"
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+            </div>
+            <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 p-3">
+              <Ticket size={18} className="text-amber-300" />
+              <div>
+                <p className="text-lg font-bold leading-none text-white">{profile?.vouchers ?? 0}</p>
+                <p className="text-[11px] text-white/50">vouchers</p>
+              </div>
+            </div>
+          </div>
+
+          <BorderBeam size={70} duration={7} />
         </div>
 
+        {/* week chart */}
         <Card>
-          <div className="flex items-center justify-between">
-            <Label>Today</Label>
-            <TrendingUp size={16} className="text-zinc-300" />
-          </div>
-          <p className={`mt-2.5 text-2xl font-bold tabular-nums tracking-tight ${todayDelta >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-            {todayDelta >= 0 ? '+' : ''}
-            {money(todayDelta)}
-          </p>
-          <p className="mt-1 text-xs text-zinc-400">net change today</p>
+          <SectionTitle title="This week" />
+          <WeekChart logs={logs} />
         </Card>
 
-        <Card>
-          <div className="flex items-center justify-between">
-            <Label>Tasks</Label>
-            <ListChecks size={16} className="text-zinc-300" />
-          </div>
-          <p className="mt-2.5 text-2xl font-bold tabular-nums tracking-tight text-zinc-900">
-            {doneCount}
-            <span className="text-base font-semibold text-zinc-300">/{tasks.length}</span>
-          </p>
-          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-zinc-100">
-            <div className="h-full rounded-full bg-zinc-900 transition-all duration-500" style={{ width: `${pct}%` }} />
-          </div>
-        </Card>
-
-        <Card>
-          <div className="flex items-center justify-between">
-            <Label>Vouchers</Label>
-            <Ticket size={16} className="text-amber-400" />
-          </div>
-          <p className="mt-2.5 text-2xl font-bold tabular-nums tracking-tight text-zinc-900">
-            {profile?.vouchers ?? 0}
-          </p>
-          <p className="mt-1 text-xs text-zinc-400">guilt-free passes</p>
-        </Card>
-      </div>
-
-      {/* main grid */}
-      <div className="mt-6 grid gap-4 lg:grid-cols-3">
         {/* tasks */}
         <Card className="lg:col-span-2">
           <SectionTitle
@@ -197,7 +210,6 @@ export default function Home() {
               </button>
             }
           />
-
           {loading ? (
             <div className="space-y-2 py-1">
               {[0, 1, 2].map((i) => (
@@ -210,28 +222,21 @@ export default function Home() {
             </p>
           ) : (
             <ul className="divide-y divide-zinc-100">
-              {[...required, ...custom].map((t) => (
+              {ordered.map((t) => (
                 <TaskItem key={t.id} task={t} onComplete={completeTask} />
               ))}
             </ul>
           )}
-
           <div className="mt-4 border-t border-zinc-100 pt-4">
             <AddTaskForm onAdd={addTask} />
           </div>
         </Card>
 
-        {/* side column */}
-        <div className="flex flex-col gap-4">
-          <Card>
-            <SectionTitle title="This week" />
-            <WeekChart logs={logs} />
-          </Card>
-          <Card>
-            <SectionTitle title="Recent activity" />
-            <WalletHistory logs={logs} limit={6} />
-          </Card>
-        </div>
+        {/* recent activity */}
+        <Card>
+          <SectionTitle title="Recent activity" />
+          <WalletHistory logs={logs} limit={6} />
+        </Card>
       </div>
 
       {showFixed && (

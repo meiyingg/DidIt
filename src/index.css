@@ -68,3 +68,58 @@ input[type='number'] {
 .animate-fade-up {
   animation: fade-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
+
+/* ── MagicUI-style effects ─────────────────────────────────────── */
+
+/* BorderBeam: a gradient streak that travels around a card's border. */
+.bb-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 1px solid transparent;
+  pointer-events: none;
+  -webkit-mask:
+    linear-gradient(transparent, transparent) padding-box,
+    linear-gradient(#000, #000) border-box;
+  mask:
+    linear-gradient(transparent, transparent) padding-box,
+    linear-gradient(#000, #000) border-box;
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+.bb-beam {
+  position: absolute;
+  aspect-ratio: 1 / 1;
+  background: linear-gradient(to left, var(--bb-from), var(--bb-to), transparent);
+  animation: bb-travel var(--bb-duration, 6s) linear infinite;
+}
+@keyframes bb-travel {
+  to {
+    offset-distance: 100%;
+  }
+}
+
+/* animated gradient text/background */
+@keyframes gradient-x {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+.animate-gradient-x {
+  background-size: 200% 200%;
+  animation: gradient-x 6s ease infinite;
+}
+
+/* shimmer sweep for buttons */
+@keyframes shimmer-sweep {
+  0% {
+    transform: translateX(-150%);
+  }
+  100% {
+    transform: translateX(150%);
+  }
+}
