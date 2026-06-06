@@ -4,6 +4,7 @@ import { ProfileProvider } from './contexts/ProfileContext'
 import Layout from './components/Layout'
 import Login from './pages/Login'
 import Home from './pages/Home'
+import World from './pages/World'
 import Stats from './pages/Stats'
 import Shop from './pages/Shop'
 import Ranking from './pages/Ranking'
@@ -32,6 +33,7 @@ export default function App() {
         <Route path="/login" element={<Navigate to="/" replace />} />
         <Route element={<Layout />}>
           <Route path="/" element={<Home />} />
+          <Route path="/world" element={<World />} />
           <Route path="/stats" element={<Stats />} />
           <Route path="/shop" element={<Shop />} />
           <Route path="/ranking" element={<Ranking />} />
