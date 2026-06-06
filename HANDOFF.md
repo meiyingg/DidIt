@@ -97,20 +97,50 @@
    ```
    打开终端里给的地址（默认 http://localhost:5173），注册个号就能用。
 
+> **注意**：`.env` 里那行 `DASHSCOPE_API_KEY` 是没用的、请删掉。AI 的 Key 不放前端，
+> 而是作为 Supabase 的密钥（见下一节）。
+
+---
+
+## 五·五、接上 AI 定价（通义千问）
+
+现在加任务时，奖励金额由 **AI（通义 Qwen）** 给。AI 跑在 Supabase 的 **Edge Function**
+里，Key 藏后端，前端碰不到。**没部署也不影响用**——前端会自动兜底给默认 ¥50。
+想让 AI 真正生效，按下面三步部署一次：
+
+1. **装 Supabase CLI**（任选）：
+   ```bash
+   npm i -g supabase        # 或: scoop install supabase
+   ```
+2. **登录 + 关联项目**（project-ref 就是你 URL 里那串 `dtjbxcogwpsvvmcefjds`）：
+   ```bash
+   supabase login
+   supabase link --project-ref dtjbxcogwpsvvmcefjds
+   ```
+3. **设置通义 Key（后端密钥）并部署函数**：
+   ```bash
+   supabase secrets set DASHSCOPE_API_KEY=你新生成的通义key
+   supabase functions deploy price-task
+   ```
+
+> 通义 Key 去阿里云百炼/DashScope 控制台拿；**用新生成的那把**（旧的已在聊天暴露，作废它）。
+> 部署后，在 app 里加个任务试试，奖励金额就是 AI 给的了。
+> 函数代码在 [`supabase/functions/price-task/index.ts`](supabase/functions/price-task/index.ts)，
+> 定价标准（认真一天≈500、分档）写在里面，想调金额改那段 prompt 即可。
+
 ---
 
 ## 六、接下来的工作（路线图）
 
 > 这些我都还没做，等你发话。
 
-### Phase 2 — 核心激励闭环（建议下一步做）
-- **学习计时器**：选已有待办 / 输文本新建；锁屏继续计时（存开始时间戳算差值）；
+### Phase 2 — 核心激励闭环
+- ✅ **AI 自动定价**：已接 **通义千问 DashScope**（Edge Function，Key 藏后端，带兜底）。
+  部署见上面「五·五」。
+- ⬜ **学习计时器**：选已有待办 / 输文本新建；锁屏继续计时（存开始时间戳算差值）；
   结束后 **AI 严格结算收益**、标记任务完成、存档。
-- **AI 自动定价**：接 **通义千问 DashScope**，在 Supabase **Edge Function** 里调
-  （Key 走后端环境变量，前端不碰）。定价基准：认真一天 ≈ 赚 500。
-  AI 不可用时给默认金额兜底。
-- **兑换券 UI**：查看数量、获取记录、手动"使用"一张。
-- **个人数据面板**：学习时长（今日/本周/累计）+ 收益趋势图 + 任务完成率。
+- ⬜ **兑换券 UI**：查看数量、获取记录、手动"使用"一张。
+- ⬜ **个人数据面板**：学习时长（今日/本周/累计）+ 收益趋势图 + 任务完成率。
 
 ### Phase 3 — 社交
 - 多人**共用一个总榜**：财富 / 完成任务数 / 累计学习时长 三个维度排名。

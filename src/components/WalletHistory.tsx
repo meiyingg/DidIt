@@ -7,34 +7,47 @@ const LABELS: Record<WalletLog['type'], string> = {
   daily_deduction: 'Daily cost',
 }
 
+const ICONS: Record<WalletLog['type'], string> = {
+  task_reward: '✅',
+  study_reward: '📚',
+  daily_deduction: '🌙',
+}
+
 export default function WalletHistory({ logs }: { logs: WalletLog[] }) {
   if (logs.length === 0) {
-    return <p className="px-1 py-4 text-sm text-slate-500">No activity yet.</p>
+    return (
+      <div className="rounded-xl border border-dashed border-slate-200 px-4 py-6 text-center text-sm text-slate-400">
+        No activity yet.
+      </div>
+    )
   }
 
   return (
-    <ul className="divide-y divide-slate-800">
-      {logs.map((log) => {
-        const positive = log.amount >= 0
-        return (
-          <li key={log.id} className="flex items-center justify-between py-3">
-            <div className="min-w-0">
-              <p className="truncate text-sm text-slate-200">{log.note || LABELS[log.type]}</p>
-              <p className="text-xs text-slate-500">
-                {LABELS[log.type]} · {shortTime(log.created_at)}
-              </p>
-            </div>
-            <span
-              className={`shrink-0 text-sm font-semibold tabular-nums ${
-                positive ? 'text-emerald-400' : 'text-red-400'
-              }`}
-            >
-              {positive ? '+' : ''}
-              {money(log.amount)}
-            </span>
-          </li>
-        )
-      })}
-    </ul>
+    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <ul className="divide-y divide-slate-100">
+        {logs.map((log) => {
+          const positive = log.amount >= 0
+          return (
+            <li key={log.id} className="flex items-center gap-3 px-4 py-3">
+              <span className="text-base">{ICONS[log.type]}</span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm text-slate-800">{log.note || LABELS[log.type]}</p>
+                <p className="text-xs text-slate-400">
+                  {LABELS[log.type]} · {shortTime(log.created_at)}
+                </p>
+              </div>
+              <span
+                className={`shrink-0 text-sm font-semibold tabular-nums ${
+                  positive ? 'text-emerald-600' : 'text-red-600'
+                }`}
+              >
+                {positive ? '+' : ''}
+                {money(log.amount)}
+              </span>
+            </li>
+          )
+        })}
+      </ul>
+    </div>
   )
 }

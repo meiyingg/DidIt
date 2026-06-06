@@ -23,9 +23,7 @@ export default function Login() {
         await signIn(email, password)
       } else {
         await signUp(email, password, username.trim() || email.split('@')[0])
-        setNotice(
-          'Account created. If email confirmation is on, check your inbox — otherwise just sign in.',
-        )
+        setNotice('Account created. If email confirmation is on, check your inbox — otherwise just sign in.')
         setMode('signin')
       }
     } catch (err) {
@@ -35,81 +33,84 @@ export default function Login() {
     }
   }
 
+  const inputClass =
+    'w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder-slate-400 shadow-sm outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10'
+
   return (
     <div className="flex min-h-screen items-center justify-center px-4">
-      <div className="w-full max-w-sm">
+      <div className="w-full max-w-sm animate-fade-up">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-500 text-2xl font-bold text-amber-950 shadow-lg shadow-amber-500/20">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-900 text-2xl font-bold text-white shadow-lg shadow-slate-900/15">
             ¥
           </div>
-          <h1 className="text-2xl font-bold text-white">DidIt</h1>
-          <p className="mt-1 text-sm text-slate-400">
-            Earn your way out of the red. Stay disciplined.
-          </p>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">DidIt</h1>
+          <p className="mt-1.5 text-sm text-slate-500">Earn your way out of the red. Stay disciplined.</p>
         </div>
 
-        <div className="mb-4 flex rounded-xl bg-slate-800 p-1">
-          {(['signin', 'signup'] as Mode[]).map((m) => (
-            <button
-              key={m}
-              type="button"
-              onClick={() => {
-                setMode(m)
-                setError(null)
-                setNotice(null)
-              }}
-              className={`flex-1 rounded-lg py-2 text-sm font-medium transition ${
-                mode === m ? 'bg-amber-500 text-amber-950' : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              {m === 'signin' ? 'Sign in' : 'Sign up'}
-            </button>
-          ))}
-        </div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="mb-5 flex rounded-xl bg-slate-100 p-1">
+            {(['signin', 'signup'] as Mode[]).map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => {
+                  setMode(m)
+                  setError(null)
+                  setNotice(null)
+                }}
+                className={`flex-1 rounded-lg py-2 text-sm font-medium transition ${
+                  mode === m ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                {m === 'signin' ? 'Sign in' : 'Sign up'}
+              </button>
+            ))}
+          </div>
 
-        <form onSubmit={onSubmit} className="space-y-3">
-          <input
-            type="email"
-            required
-            autoComplete="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-white placeholder-slate-500 outline-none focus:border-amber-500"
-          />
-
-          {mode === 'signup' && (
+          <form onSubmit={onSubmit} className="space-y-3">
             <input
-              type="text"
-              placeholder="Display name"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-white placeholder-slate-500 outline-none focus:border-amber-500"
+              type="email"
+              required
+              autoComplete="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className={inputClass}
             />
-          )}
 
-          <input
-            type="password"
-            required
-            minLength={6}
-            autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
-            placeholder="Password (min 6 characters)"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-white placeholder-slate-500 outline-none focus:border-amber-500"
-          />
+            {mode === 'signup' && (
+              <input
+                type="text"
+                placeholder="Display name"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className={inputClass}
+              />
+            )}
 
-          {error && <p className="text-sm text-red-400">{error}</p>}
-          {notice && <p className="text-sm text-emerald-400">{notice}</p>}
+            <input
+              type="password"
+              required
+              minLength={6}
+              autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
+              placeholder="Password (min 6 characters)"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className={inputClass}
+            />
 
-          <button
-            type="submit"
-            disabled={busy}
-            className="w-full rounded-xl bg-amber-500 py-3 font-semibold text-amber-950 transition hover:bg-amber-400 disabled:opacity-50"
-          >
-            {busy ? 'Please wait…' : mode === 'signin' ? 'Sign in' : 'Create account'}
-          </button>
-        </form>
+            {error && <p className="text-sm text-red-600">{error}</p>}
+            {notice && <p className="text-sm text-emerald-600">{notice}</p>}
+
+            <button
+              type="submit"
+              disabled={busy}
+              className="w-full rounded-xl bg-slate-900 py-3 font-semibold text-white shadow-sm transition hover:bg-slate-800 active:scale-[0.99] disabled:opacity-50"
+            >
+              {busy ? 'Please wait…' : mode === 'signin' ? 'Sign in' : 'Create account'}
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   )

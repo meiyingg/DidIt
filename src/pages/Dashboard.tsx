@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { priceTask } from '../lib/pricing'
 import { useAuth } from '../contexts/AuthContext'
 import type { FixedTask, Profile, Task, WalletLog } from '../lib/types'
 import BalanceCard from '../components/BalanceCard'
@@ -74,8 +75,9 @@ export default function Dashboard() {
     await load()
   }
 
-  async function addTask(name: string, reward: number) {
+  async function addTask(name: string) {
     if (!user) return
+    const reward = await priceTask(name)
     const { error: insErr } = await supabase.from('tasks').insert({
       user_id: user.id,
       name,
@@ -89,8 +91,9 @@ export default function Dashboard() {
     await load()
   }
 
-  async function addFixed(name: string, reward: number) {
+  async function addFixed(name: string) {
     if (!user) return
+    const reward = await priceTask(name)
     const { error: insErr } = await supabase.from('fixed_tasks').insert({
       user_id: user.id,
       name,
@@ -113,57 +116,74 @@ export default function Dashboard() {
     await load()
   }
 
-  const { required, custom, doneCount } = useMemo(() => {
+  const { required, custom, doneCount, todayDelta } = useMemo(() => {
     const required = tasks.filter((t) => t.type === 'required')
     const custom = tasks.filter((t) => t.type === 'custom')
     const doneCount = tasks.filter((t) => t.done).length
-    return { required, custom, doneCount }
-  }, [tasks])
+    const today = new Date().toLocaleDateString('en-CA')
+    const todayDelta = logs
+      .filter((l) => l.created_at.slice(0, 10) === today)
+      .reduce((sum, l) => sum + Number(l.amount), 0)
+    return { required, custom, doneCount, todayDelta }
+  }, [tasks, logs])
 
   if (loading) {
     return <div className="flex min-h-screen items-center justify-center text-slate-400">Loading…</div>
   }
 
   return (
-    <div className="mx-auto min-h-screen max-w-md px-4 pb-12 pt-6">
+    <div className="mx-auto min-h-screen max-w-md px-4 pb-16 pt-6">
       {/* Header */}
       <header className="mb-5 flex items-center justify-between">
-        <div>
-          <p className="text-sm text-slate-400">Welcome back</p>
-          <h1 className="text-xl font-bold text-white">{profile?.username ?? 'You'}</h1>
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900 text-lg font-bold text-white">
+            {(profile?.username ?? 'Y').charAt(0).toUpperCase()}
+          </div>
+          <div>
+            <p className="text-xs text-slate-400">Welcome back</p>
+            <h1 className="text-lg font-bold tracking-tight text-slate-900">
+              {profile?.username ?? 'You'}
+            </h1>
+          </div>
         </div>
         <button
           onClick={signOut}
-          className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800"
+          className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600 shadow-sm transition hover:bg-slate-50"
         >
           Sign out
         </button>
       </header>
 
       {error && (
-        <div className="mb-4 rounded-xl border border-red-900 bg-red-950/50 px-4 py-3 text-sm text-red-300">
+        <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
         </div>
       )}
 
-      {profile && <BalanceCard balance={profile.balance} vouchers={profile.vouchers} />}
+      {profile && (
+        <BalanceCard
+          balance={profile.balance}
+          vouchers={profile.vouchers}
+          todayDelta={todayDelta}
+          doneCount={doneCount}
+          totalCount={tasks.length}
+        />
+      )}
 
       {/* Tasks */}
       <section className="mt-6">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">
-            Today · {doneCount}/{tasks.length} done
-          </h2>
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400">Today</h2>
           <button
             onClick={() => setShowFixed(true)}
-            className="text-sm font-medium text-amber-400 hover:text-amber-300"
+            className="text-sm font-medium text-indigo-600 transition hover:text-indigo-500"
           >
             Edit required
           </button>
         </div>
 
         {required.length > 0 && (
-          <ul className="mb-3 space-y-2">
+          <ul className="mb-2 space-y-2">
             {required.map((t) => (
               <TaskItem key={t.id} task={t} onComplete={completeTask} />
             ))}
@@ -171,7 +191,7 @@ export default function Dashboard() {
         )}
 
         {custom.length > 0 && (
-          <ul className="mb-3 space-y-2">
+          <ul className="mb-2 space-y-2">
             {custom.map((t) => (
               <TaskItem key={t.id} task={t} onComplete={completeTask} />
             ))}
@@ -179,17 +199,19 @@ export default function Dashboard() {
         )}
 
         {tasks.length === 0 && (
-          <p className="mb-3 rounded-xl border border-dashed border-slate-700 px-4 py-6 text-center text-sm text-slate-500">
+          <p className="mb-3 rounded-xl border border-dashed border-slate-200 px-4 py-6 text-center text-sm text-slate-400">
             No tasks yet. Add one below, or set up your daily required list.
           </p>
         )}
 
-        <AddTaskForm onAdd={addTask} />
+        <div className="mt-3">
+          <AddTaskForm onAdd={addTask} />
+        </div>
       </section>
 
       {/* History */}
       <section className="mt-8">
-        <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-slate-400">
+        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
           Recent activity
         </h2>
         <WalletHistory logs={logs} />
