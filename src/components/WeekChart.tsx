@@ -24,11 +24,11 @@ export default function WeekChart({ logs }: { logs: WalletLog[] }) {
           <div key={i} className="flex flex-1 flex-col items-center gap-2">
             <div className="flex w-full flex-1 items-end">
               <div
-                className="w-full rounded-md bg-violet-600/90 transition-all duration-500"
+                className="w-full rounded-md bg-[color:var(--color-grass)] transition-all duration-500"
                 style={{ height: `${Math.max(4, h)}%` }}
               />
             </div>
-            <span className="text-[10px] text-zinc-400">{DAY_LABELS[i]}</span>
+            <span className="text-[10px] text-[color:var(--color-faint)]">{DAY_LABELS[i]}</span>
           </div>
         ))}
       </div>

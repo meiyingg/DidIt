@@ -30,28 +30,28 @@ export default function TaskItem({ task, onComplete }: Props) {
         aria-label={task.done ? 'Completed' : 'Mark complete'}
         className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition ${
           task.done
-            ? 'border-emerald-500 bg-emerald-500 text-white'
-            : 'border-zinc-300 text-transparent hover:border-zinc-900 hover:text-zinc-300'
+            ? 'border-[color:var(--color-grass)] bg-[color:var(--color-grass)] text-white'
+            : 'border-[color:var(--color-line-strong)] text-transparent hover:border-[color:var(--color-grass)] hover:text-[color:var(--color-line-strong)]'
         }`}
       >
         <Check size={12} strokeWidth={3} />
       </button>
 
       <div className="min-w-0 flex-1">
-        <p className={`truncate text-sm ${task.done ? 'text-zinc-400 line-through' : 'text-zinc-800'}`}>
+        <p className={`truncate text-sm ${task.done ? 'text-[color:var(--color-faint)] line-through' : 'text-[color:var(--color-ink)]'}`}>
           {task.name}
         </p>
       </div>
 
       {task.type === 'required' && (
-        <span className="shrink-0 rounded-full bg-violet-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-violet-700">
+        <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700">
           Required
         </span>
       )}
 
       <span
-        className={`w-16 shrink-0 text-right text-sm font-semibold tabular-nums ${
-          task.done ? 'text-zinc-300' : 'text-emerald-600'
+        className={`font-pixel w-16 shrink-0 text-right text-sm font-bold tabular-nums ${
+          task.done ? 'text-[color:var(--color-faint)]' : 'text-[color:var(--color-grass-dark)]'
         }`}
       >
         +{money(task.reward)}

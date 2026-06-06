@@ -5,7 +5,7 @@ import TabBar from './TabBar'
 
 export default function Layout() {
   return (
-    <div className="flex min-h-screen bg-zinc-50">
+    <div className="flex min-h-screen bg-[color:var(--color-canvas)]">
       <Sidebar />
       <div className="flex min-w-0 flex-1 flex-col">
         <MobileTopBar />

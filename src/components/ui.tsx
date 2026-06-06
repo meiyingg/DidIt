@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import type { LucideIcon } from 'lucide-react'
 
-/** Base surface. Every panel in the app uses this for a consistent look. */
+/** Cozy wood-panel surface used by every card in the app. */
 export function Card({
   children,
   className = '',
@@ -11,58 +11,56 @@ export function Card({
   className?: string
   padded?: boolean
 }) {
-  return (
-    <div
-      className={`rounded-2xl border border-zinc-200 bg-white shadow-[0_1px_2px_rgba(9,9,11,0.04)] ${
-        padded ? 'p-5' : ''
-      } ${className}`}
-    >
-      {children}
-    </div>
-  )
+  return <div className={`panel ${padded ? 'p-5' : ''} ${className}`}>{children}</div>
 }
 
-/** Tiny uppercase label used above values and as section eyebrows. */
+/** Small pixel-font label / eyebrow. */
 export function Label({ children, className = '' }: { children: ReactNode; className?: string }) {
   return (
-    <span className={`text-[11px] font-semibold uppercase tracking-wider text-zinc-400 ${className}`}>
+    <span className={`font-pixel text-xs font-semibold uppercase tracking-wide text-[color:var(--color-muted)] ${className}`}>
       {children}
     </span>
   )
 }
 
-/** Section header: title on the left, optional action on the right. */
+/** Section header: pixel title on the left, optional action on the right. */
 export function SectionTitle({ title, action }: { title: string; action?: ReactNode }) {
   return (
     <div className="mb-3 flex items-center justify-between">
-      <h2 className="text-sm font-semibold text-zinc-900">{title}</h2>
+      <h2 className="font-pixel text-base font-semibold text-[color:var(--color-ink)]">{title}</h2>
       {action}
     </div>
   )
 }
 
-/** A compact KPI tile: icon, label, big value, optional sub-line. */
+/** KPI tile: colored icon chip + label + big pixel value. */
 export function StatCard({
   icon: Icon,
   label,
   value,
+  tile = 'bg-amber-100 text-amber-700',
+  valueClass = 'text-[color:var(--color-ink)]',
   sub,
-  valueClass = 'text-zinc-900',
 }: {
   icon: LucideIcon
   label: string
-  value: string
-  sub?: ReactNode
+  value: ReactNode
+  tile?: string
   valueClass?: string
+  sub?: ReactNode
 }) {
   return (
-    <Card>
-      <div className="flex items-center justify-between">
-        <Label>{label}</Label>
-        <Icon size={16} className="text-zinc-300" />
+    <Card className="flex items-center gap-3" padded={false}>
+      <div className="flex items-center gap-3 p-4">
+        <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${tile}`}>
+          <Icon size={22} strokeWidth={2.2} />
+        </div>
+        <div className="min-w-0">
+          <Label>{label}</Label>
+          <p className={`font-pixel text-2xl font-bold leading-tight ${valueClass}`}>{value}</p>
+          {sub && <p className="text-xs text-[color:var(--color-faint)]">{sub}</p>}
+        </div>
       </div>
-      <p className={`mt-2.5 text-2xl font-bold tabular-nums tracking-tight ${valueClass}`}>{value}</p>
-      {sub && <div className="mt-1 text-xs text-zinc-400">{sub}</div>}
     </Card>
   )
 }

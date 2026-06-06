@@ -1,13 +1,23 @@
 @import 'tailwindcss';
 
-/* ── Design tokens ─────────────────────────────────────────────── */
+/* ── Cozy pixel design tokens (Stardew-ish) ───────────────────── */
 @theme {
-  --color-canvas: #fafafa;
-  --color-ink: #09090b; /* zinc-950 */
-  --color-muted: #71717a; /* zinc-500 */
-  --color-faint: #a1a1aa; /* zinc-400 */
-  --color-line: #e4e4e7; /* zinc-200 */
-  --color-accent: #6d28d9; /* violet-700 */
+  --color-canvas: #f4e9cd; /* warm cream */
+  --color-panel: #fffdf6; /* card */
+  --color-panel-2: #fbf2da; /* inset / muted card */
+  --color-line: #e3d2a8; /* tan border */
+  --color-line-strong: #cbb280;
+  --color-ink: #43381f; /* warm dark brown */
+  --color-muted: #8c7a55;
+  --color-faint: #b6a578;
+  --color-grass: #6fae3e;
+  --color-grass-dark: #4f8f2a;
+  --color-gold: #e9a91d;
+  --color-wood: #b07b4f;
+  --color-berry: #d9544d;
+  --color-sky-1: #8fd0ef;
+  --color-sky-2: #cdeaf6;
+  --color-navy: #1f2d4d;
 }
 
 :root {
@@ -26,21 +36,32 @@ body {
   color: var(--color-ink);
   font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
-  letter-spacing: -0.011em;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
+    env(safe-area-inset-left);
 }
 
-/* refined, unobtrusive scrollbar */
+/* pixel display font for headings / numbers / labels */
+.font-pixel {
+  font-family: 'Pixelify Sans', 'Inter', system-ui, sans-serif;
+  letter-spacing: 0.01em;
+}
+
+/* keep any pixel-art images crisp */
+.pixelated {
+  image-rendering: pixelated;
+}
+
+/* warm scrollbar */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #d4d4d8 transparent;
+  scrollbar-color: #cbb280 transparent;
 }
 *::-webkit-scrollbar {
   width: 10px;
   height: 10px;
 }
 *::-webkit-scrollbar-thumb {
-  background-color: #d4d4d8;
+  background-color: #cbb280;
   border: 3px solid var(--color-canvas);
   border-radius: 999px;
 }
@@ -53,6 +74,14 @@ input[type='number']::-webkit-inner-spin-button {
 input[type='number'] {
   -moz-appearance: textfield;
   appearance: textfield;
+}
+
+/* cozy card panel: cream fill, tan border, soft "stacked" shadow */
+.panel {
+  background: var(--color-panel);
+  border: 1.5px solid var(--color-line);
+  border-radius: 14px;
+  box-shadow: 0 2px 0 0 var(--color-line), 0 6px 14px -8px rgba(67, 56, 31, 0.25);
 }
 
 @keyframes fade-up {
@@ -69,57 +98,11 @@ input[type='number'] {
   animation: fade-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-/* ── MagicUI-style effects ─────────────────────────────────────── */
-
-/* BorderBeam: a gradient streak that travels around a card's border. */
-.bb-ring {
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  border: 1px solid transparent;
-  pointer-events: none;
-  -webkit-mask:
-    linear-gradient(transparent, transparent) padding-box,
-    linear-gradient(#000, #000) border-box;
-  mask:
-    linear-gradient(transparent, transparent) padding-box,
-    linear-gradient(#000, #000) border-box;
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-}
-.bb-beam {
-  position: absolute;
-  aspect-ratio: 1 / 1;
-  background: linear-gradient(to left, var(--bb-from), var(--bb-to), transparent);
-  animation: bb-travel var(--bb-duration, 6s) linear infinite;
-}
-@keyframes bb-travel {
-  to {
-    offset-distance: 100%;
-  }
-}
-
-/* animated gradient text/background */
-@keyframes gradient-x {
-  0%,
-  100% {
-    background-position: 0% 50%;
-  }
+@keyframes float-y {
   50% {
-    background-position: 100% 50%;
+    transform: translateY(-5px);
   }
 }
-.animate-gradient-x {
-  background-size: 200% 200%;
-  animation: gradient-x 6s ease infinite;
-}
-
-/* shimmer sweep for buttons */
-@keyframes shimmer-sweep {
-  0% {
-    transform: translateX(-150%);
-  }
-  100% {
-    transform: translateX(150%);
-  }
+.animate-float {
+  animation: float-y 3s ease-in-out infinite;
 }
