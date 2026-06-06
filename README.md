@@ -1,4 +1,4 @@
-# Grind Bank 🪙
+# Payday 🪙
 
 A small, invite-only web app that turns self-discipline into a game with a
 **virtual RMB economy**. Every day at midnight the system charges you a
@@ -64,7 +64,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-public-key
 pnpm dev
 ```
 
-Open the printed URL (default http://localhost:5173), sign up, and start grinding.
+Open the printed URL (default http://localhost:5173), sign up, and start earning.
 
 > **Tip:** In Supabase **Authentication → Providers → Email** you can turn off
 > "Confirm email" for a frictionless small-group signup.
