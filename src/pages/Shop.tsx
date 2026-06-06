@@ -42,7 +42,7 @@ export default function Shop() {
         <Sparkles size={13} /> Preview — redeeming goes live soon
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {SAMPLE_ITEMS.map((item) => (
           <div
             key={item.name}

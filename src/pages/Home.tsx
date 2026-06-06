@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { SlidersHorizontal, LogOut } from 'lucide-react'
+import { SlidersHorizontal } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { priceTask } from '../lib/pricing'
 import { useAuth } from '../contexts/AuthContext'
@@ -12,7 +12,7 @@ import WalletHistory from '../components/WalletHistory'
 import FixedTasksManager from '../components/FixedTasksManager'
 
 export default function Home() {
-  const { user, signOut } = useAuth()
+  const { user } = useAuth()
   const { profile, refresh: refreshProfile } = useProfile()
   const [tasks, setTasks] = useState<Task[]>([])
   const [fixedTasks, setFixedTasks] = useState<FixedTask[]>([])
@@ -110,25 +110,11 @@ export default function Home() {
 
   return (
     <>
-      <header className="mb-5 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900 text-lg font-bold text-white">
-            {(profile?.username ?? 'Y').charAt(0).toUpperCase()}
-          </div>
-          <div>
-            <p className="text-xs text-slate-400">Welcome back</p>
-            <h1 className="text-lg font-bold tracking-tight text-slate-900">
-              {profile?.username ?? 'You'}
-            </h1>
-          </div>
-        </div>
-        <button
-          onClick={signOut}
-          className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50"
-          aria-label="Sign out"
-        >
-          <LogOut size={17} />
-        </button>
+      <header className="mb-5">
+        <p className="text-sm text-slate-400">Welcome back</p>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+          {profile?.username ?? 'You'}
+        </h1>
       </header>
 
       {error && (

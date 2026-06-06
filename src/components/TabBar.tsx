@@ -1,18 +1,11 @@
 import { NavLink } from 'react-router-dom'
-import { House, ChartLine, Store, Trophy } from 'lucide-react'
-
-const tabs = [
-  { to: '/', label: 'Home', Icon: House, end: true },
-  { to: '/stats', label: 'Stats', Icon: ChartLine, end: false },
-  { to: '/shop', label: 'Shop', Icon: Store, end: false },
-  { to: '/ranking', label: 'Ranking', Icon: Trophy, end: false },
-]
+import { NAV } from './navItems'
 
 export default function TabBar() {
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/85 backdrop-blur-lg">
+    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/85 backdrop-blur-lg md:hidden">
       <div className="mx-auto flex max-w-md items-stretch justify-around px-2 pb-[env(safe-area-inset-bottom)]">
-        {tabs.map(({ to, label, Icon, end }) => (
+        {NAV.map(({ to, label, Icon, end }) => (
           <NavLink
             key={to}
             to={to}

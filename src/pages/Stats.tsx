@@ -66,7 +66,7 @@ export default function Stats() {
     <>
       <PageHeader title="Stats" subtitle="Your discipline, in numbers." />
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {stats.map(({ Icon, label, value, tint }) => (
           <div key={label} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <Icon size={18} className="text-slate-400" />
