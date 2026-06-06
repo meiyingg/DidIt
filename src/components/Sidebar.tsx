@@ -9,33 +9,39 @@ export default function Sidebar() {
   const { profile } = useProfile()
 
   return (
-    <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-slate-200 bg-white px-4 py-6 md:flex">
+    <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-zinc-200 bg-white px-3.5 py-5 md:flex">
       {/* brand */}
-      <div className="mb-8 flex items-center gap-2.5 px-2">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 text-lg font-bold text-white">
+      <div className="mb-7 flex items-center gap-2.5 px-2.5">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-950 text-base font-bold text-white">
           ¥
         </div>
-        <span className="text-lg font-bold tracking-tight text-slate-900">DidIt</span>
+        <span className="text-[15px] font-bold tracking-tight text-zinc-900">DidIt</span>
       </div>
 
-      {/* nav */}
-      <nav className="flex flex-1 flex-col gap-1">
+      <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
+        Menu
+      </p>
+      <nav className="flex flex-1 flex-col gap-0.5">
         {NAV.map(({ to, label, Icon, end }) => (
           <NavLink
             key={to}
             to={to}
             end={end}
             className={({ isActive }) =>
-              `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
+              `group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
                 isActive
-                  ? 'bg-slate-900 text-white shadow-sm'
-                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                  ? 'bg-zinc-100 text-zinc-900'
+                  : 'text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900'
               }`
             }
           >
             {({ isActive }) => (
               <>
-                <Icon size={19} strokeWidth={isActive ? 2.4 : 1.9} />
+                <Icon
+                  size={18}
+                  strokeWidth={2}
+                  className={isActive ? 'text-violet-700' : 'text-zinc-400 group-hover:text-zinc-600'}
+                />
                 {label}
               </>
             )}
@@ -44,24 +50,20 @@ export default function Sidebar() {
       </nav>
 
       {/* profile + sign out */}
-      <div className="mt-4 border-t border-slate-100 pt-4">
-        <div className="flex items-center gap-3 px-1">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-sm font-bold text-slate-600">
-            {(profile?.username ?? 'Y').charAt(0).toUpperCase()}
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-slate-900">
-              {profile?.username ?? 'You'}
-            </p>
-          </div>
-          <button
-            onClick={signOut}
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
-            aria-label="Sign out"
-          >
-            <LogOut size={16} />
-          </button>
+      <div className="mt-4 flex items-center gap-2.5 rounded-xl border border-zinc-200 bg-zinc-50 p-2.5">
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-900 text-xs font-bold text-white">
+          {(profile?.username ?? 'Y').charAt(0).toUpperCase()}
         </div>
+        <p className="min-w-0 flex-1 truncate text-sm font-semibold text-zinc-900">
+          {profile?.username ?? 'You'}
+        </p>
+        <button
+          onClick={signOut}
+          className="flex h-7 w-7 items-center justify-center rounded-md text-zinc-400 transition hover:bg-white hover:text-zinc-700"
+          aria-label="Sign out"
+        >
+          <LogOut size={15} />
+        </button>
       </div>
     </aside>
   )

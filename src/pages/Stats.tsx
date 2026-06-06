@@ -5,9 +5,8 @@ import { useAuth } from '../contexts/AuthContext'
 import { useProfile } from '../contexts/ProfileContext'
 import type { WalletLog } from '../lib/types'
 import { money } from '../lib/format'
-import PageHeader from '../components/PageHeader'
-
-const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+import { Card, Label, SectionTitle, StatCard } from '../components/ui'
+import WeekChart from '../components/WeekChart'
 
 export default function Stats() {
   const { user } = useAuth()
@@ -21,84 +20,46 @@ export default function Stats() {
     ;(async () => {
       const since = new Date(Date.now() - 7 * 864e5).toISOString()
       const [logsRes, studyRes, tasksRes] = await Promise.all([
-        supabase
-          .from('wallet_logs')
-          .select('*')
-          .eq('user_id', user.id)
-          .gte('created_at', since)
-          .order('created_at', { ascending: true }),
+        supabase.from('wallet_logs').select('*').eq('user_id', user.id).gte('created_at', since),
         supabase.from('study_sessions').select('duration_minutes').eq('user_id', user.id),
         supabase.from('tasks').select('id', { count: 'exact', head: true }).eq('user_id', user.id).eq('done', true),
       ])
       setLogs(logsRes.data ?? [])
-      setStudyMinutes(
-        (studyRes.data ?? []).reduce((s, r) => s + (Number(r.duration_minutes) || 0), 0),
-      )
+      setStudyMinutes((studyRes.data ?? []).reduce((s, r) => s + (Number(r.duration_minutes) || 0), 0))
       setTasksDone(tasksRes.count ?? 0)
     })()
   }, [user])
 
-  const { weeklyEarned, bars } = useMemo(() => {
-    // Build last-7-day earned buckets (Mon..Sun of the trailing week).
-    const buckets = new Array(7).fill(0)
-    let weeklyEarned = 0
-    for (const l of logs) {
-      const amt = Number(l.amount)
-      if (amt <= 0) continue
-      weeklyEarned += amt
-      const d = new Date(l.created_at)
-      const idx = (d.getDay() + 6) % 7 // Mon=0
-      buckets[idx] += amt
-    }
-    const max = Math.max(1, ...buckets)
-    const bars = buckets.map((v) => Math.round((v / max) * 100))
-    return { weeklyEarned, bars }
-  }, [logs])
-
-  const stats = [
-    { Icon: Wallet, label: 'Balance', value: money(profile?.balance ?? 0), tint: 'text-slate-900' },
-    { Icon: TrendingUp, label: 'Earned (7d)', value: money(weeklyEarned), tint: 'text-emerald-600' },
-    { Icon: Clock, label: 'Study time', value: `${Math.floor(studyMinutes / 60)}h ${studyMinutes % 60}m`, tint: 'text-indigo-600' },
-    { Icon: CheckCircle2, label: 'Tasks done', value: String(tasksDone), tint: 'text-slate-900' },
-  ]
+  const weeklyEarned = useMemo(
+    () => logs.reduce((s, l) => (Number(l.amount) > 0 ? s + Number(l.amount) : s), 0),
+    [logs],
+  )
 
   return (
-    <>
-      <PageHeader title="Stats" subtitle="Your discipline, in numbers." />
+    <div className="animate-fade-up">
+      <header className="mb-6">
+        <Label>Insights</Label>
+        <h1 className="mt-1 text-2xl font-bold tracking-tight text-zinc-900">Stats</h1>
+      </header>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {stats.map(({ Icon, label, value, tint }) => (
-          <div key={label} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <Icon size={18} className="text-slate-400" />
-            <p className="mt-3 text-xs font-medium text-slate-500">{label}</p>
-            <p className={`mt-0.5 text-xl font-bold tabular-nums ${tint}`}>{value}</p>
-          </div>
-        ))}
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <StatCard icon={Wallet} label="Balance" value={money(profile?.balance ?? 0)} valueClass={(profile?.balance ?? 0) < 0 ? 'text-rose-600' : 'text-zinc-900'} sub="current wealth" />
+        <StatCard icon={TrendingUp} label="Earned 7d" value={money(weeklyEarned)} valueClass="text-emerald-600" sub="last 7 days" />
+        <StatCard icon={Clock} label="Study time" value={`${Math.floor(studyMinutes / 60)}h ${studyMinutes % 60}m`} valueClass="text-violet-700" sub="all time" />
+        <StatCard icon={CheckCircle2} label="Tasks done" value={String(tasksDone)} sub="all time" />
       </div>
 
-      <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-slate-900">Earnings this week</h2>
-          <span className="text-sm font-semibold text-emerald-600">{money(weeklyEarned)}</span>
-        </div>
-        <div className="flex h-32 items-end justify-between gap-2">
-          {bars.map((h, i) => (
-            <div key={i} className="flex flex-1 flex-col items-center gap-2">
-              <div className="flex w-full flex-1 items-end">
-                <div
-                  className="w-full rounded-md bg-gradient-to-t from-slate-900 to-indigo-500 transition-all duration-500"
-                  style={{ height: `${Math.max(4, h)}%` }}
-                />
-              </div>
-              <span className="text-[10px] text-slate-400">{DAY_LABELS[i]}</span>
-            </div>
-          ))}
-        </div>
-      </div>
+      <Card className="mt-4">
+        <SectionTitle
+          title="Earnings this week"
+          action={<span className="text-sm font-semibold text-emerald-600">{money(weeklyEarned)}</span>}
+        />
+        <WeekChart logs={logs} />
+      </Card>
 
-      <p className="mt-4 rounded-xl bg-indigo-50 px-4 py-3 text-xs text-indigo-700">
-        📚 Study time fills up once the study timer ships (next feature).
+      <p className="mt-4 rounded-xl border border-violet-100 bg-violet-50 px-4 py-3 text-xs text-violet-700">
+        📚 Study-time stats fill up once the study timer ships (next feature).
       </p>
-    </>
+    </div>
   )
 }

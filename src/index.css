@@ -1,5 +1,15 @@
 @import 'tailwindcss';
 
+/* ── Design tokens ─────────────────────────────────────────────── */
+@theme {
+  --color-canvas: #fafafa;
+  --color-ink: #09090b; /* zinc-950 */
+  --color-muted: #71717a; /* zinc-500 */
+  --color-faint: #a1a1aa; /* zinc-400 */
+  --color-line: #e4e4e7; /* zinc-200 */
+  --color-accent: #6d28d9; /* violet-700 */
+}
+
 :root {
   color-scheme: light;
 }
@@ -12,17 +22,29 @@ body,
 
 body {
   margin: 0;
-  background-color: #f8fafc; /* slate-50 */
-  color: #0f172a; /* slate-900 */
+  background-color: var(--color-canvas);
+  color: var(--color-ink);
   font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  /* respect iOS safe areas */
-  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
-    env(safe-area-inset-left);
+  letter-spacing: -0.011em;
 }
 
-/* hide number-input spinners for a cleaner reward field */
+/* refined, unobtrusive scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #d4d4d8 transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background-color: #d4d4d8;
+  border: 3px solid var(--color-canvas);
+  border-radius: 999px;
+}
+
 input[type='number']::-webkit-outer-spin-button,
 input[type='number']::-webkit-inner-spin-button {
   -webkit-appearance: none;
@@ -33,11 +55,10 @@ input[type='number'] {
   appearance: textfield;
 }
 
-/* subtle entrance animation for cards / list items */
 @keyframes fade-up {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
@@ -45,5 +66,5 @@ input[type='number'] {
   }
 }
 .animate-fade-up {
-  animation: fade-up 0.25s ease-out both;
+  animation: fade-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
 }

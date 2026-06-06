@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import type { Profile } from '../lib/types'
 import { money } from '../lib/format'
-import PageHeader from '../components/PageHeader'
+import { Card, Label } from '../components/ui'
 
 type Tab = 'wealth' | 'tasks' | 'study'
 const TABS: { key: Tab; label: string }[] = [
@@ -11,7 +11,6 @@ const TABS: { key: Tab; label: string }[] = [
   { key: 'tasks', label: 'Tasks' },
   { key: 'study', label: 'Study' },
 ]
-
 const MEDALS = ['🥇', '🥈', '🥉']
 
 export default function Ranking() {
@@ -34,16 +33,19 @@ export default function Ranking() {
   }, [])
 
   return (
-    <>
-      <PageHeader title="Ranking" subtitle="Everyone competes on one board." />
+    <div className="animate-fade-up">
+      <header className="mb-6">
+        <Label>Leaderboard</Label>
+        <h1 className="mt-1 text-2xl font-bold tracking-tight text-zinc-900">Ranking</h1>
+      </header>
 
-      <div className="mb-4 flex rounded-xl bg-slate-100 p-1">
+      <div className="mb-4 inline-flex rounded-lg border border-zinc-200 bg-white p-1">
         {TABS.map((t) => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
-            className={`flex-1 rounded-lg py-2 text-sm font-medium transition ${
-              tab === t.key ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+            className={`rounded-md px-4 py-1.5 text-sm font-medium transition ${
+              tab === t.key ? 'bg-zinc-950 text-white' : 'text-zinc-500 hover:text-zinc-900'
             }`}
           >
             {t.label}
@@ -52,52 +54,54 @@ export default function Ranking() {
       </div>
 
       {tab !== 'wealth' ? (
-        <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-10 text-center text-sm text-slate-400">
-          {tab === 'tasks' ? 'Task' : 'Study time'} ranking arrives with the next features.
-        </div>
+        <Card padded={false}>
+          <div className="px-4 py-12 text-center text-sm text-zinc-400">
+            {tab === 'tasks' ? 'Task' : 'Study time'} ranking arrives with the next features.
+          </div>
+        </Card>
       ) : loading ? (
         <div className="space-y-2">
           {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="h-[60px] animate-pulse rounded-2xl bg-slate-100" />
+            <div key={i} className="h-14 animate-pulse rounded-xl bg-zinc-100" />
           ))}
         </div>
       ) : (
-        <ul className="space-y-2">
-          {rows.map((p, i) => {
-            const isMe = p.id === user?.id
-            return (
-              <li
-                key={p.id}
-                className={`flex items-center gap-3 rounded-2xl border px-4 py-3 shadow-sm ${
-                  isMe ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 bg-white'
-                }`}
-              >
-                <span className="w-7 text-center text-lg font-bold tabular-nums">
-                  {i < 3 ? MEDALS[i] : <span className={isMe ? 'text-white/70' : 'text-slate-400'}>{i + 1}</span>}
-                </span>
-                <div
-                  className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold ${
-                    isMe ? 'bg-white/15 text-white' : 'bg-slate-100 text-slate-600'
-                  }`}
+        <Card padded={false}>
+          <ul className="divide-y divide-zinc-100">
+            {rows.map((p, i) => {
+              const isMe = p.id === user?.id
+              return (
+                <li
+                  key={p.id}
+                  className={`flex items-center gap-3 px-4 py-3 ${isMe ? 'bg-zinc-50' : ''}`}
                 >
-                  {p.username.charAt(0).toUpperCase()}
-                </div>
-                <span className="min-w-0 flex-1 truncate text-sm font-medium">
-                  {p.username}
-                  {isMe && <span className="ml-1.5 text-xs opacity-60">You</span>}
-                </span>
-                <span
-                  className={`text-sm font-bold tabular-nums ${
-                    isMe ? 'text-white' : p.balance < 0 ? 'text-red-600' : 'text-slate-900'
-                  }`}
-                >
-                  {money(p.balance)}
-                </span>
-              </li>
-            )
-          })}
-        </ul>
+                  <span className="w-6 text-center text-sm font-bold tabular-nums text-zinc-400">
+                    {i < 3 ? <span className="text-base">{MEDALS[i]}</span> : i + 1}
+                  </span>
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-zinc-100 text-sm font-bold text-zinc-600">
+                    {p.username.charAt(0).toUpperCase()}
+                  </div>
+                  <span className="min-w-0 flex-1 truncate text-sm font-medium text-zinc-900">
+                    {p.username}
+                    {isMe && (
+                      <span className="ml-1.5 rounded bg-violet-100 px-1.5 py-0.5 text-[10px] font-semibold text-violet-700">
+                        You
+                      </span>
+                    )}
+                  </span>
+                  <span
+                    className={`text-sm font-bold tabular-nums ${
+                      p.balance < 0 ? 'text-rose-600' : 'text-zinc-900'
+                    }`}
+                  >
+                    {money(p.balance)}
+                  </span>
+                </li>
+              )
+            })}
+          </ul>
+        </Card>
       )}
-    </>
+    </div>
   )
 }
