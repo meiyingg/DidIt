@@ -7,9 +7,10 @@
 
 ## 一、项目名
 
-- **产品名（UI 显示）**：**Payday** 🪙
-- **建议的 GitHub 仓库名**：`payday`
-- 本地 package 名：`payday`
+- **产品名（UI 显示）**：**DidIt** 🪙
+- **中文名**：做了么
+- **建议的 GitHub 仓库名**：`didit`
+- 本地 package 名：`didit`
 
 > 如果你想换名字，告诉我即可，我改 `index.html`、`README.md`、`package.json`。
 
@@ -48,10 +49,10 @@
 
 ### 方式 A：用 GitHub 网页建仓（最简单，不用装 gh）
 1. 打开 https://github.com/new
-2. Repository name 填 `payday`，**不要**勾选 "Add a README"（保持空仓库）
+2. Repository name 填 `didit`，**不要**勾选 "Add a README"（保持空仓库）
 3. 建好后，在项目目录执行（把 `你的用户名` 换成你的 GitHub 用户名）：
    ```bash
-   git remote add origin https://github.com/你的用户名/payday.git
+   git remote add origin https://github.com/你的用户名/didit.git
    git push -u origin main
    ```
 4. 第一次 push 会弹出 GitHub 登录窗口，用浏览器授权一下即可（这是最安全的方式，不用手动复制 token）。
@@ -61,7 +62,7 @@
 2. 登录：`gh auth login` → 选 GitHub.com → HTTPS → Login with a web browser，按提示在浏览器里授权
 3. 一键建仓并推送：
    ```bash
-   gh repo create payday --private --source=. --push
+   gh repo create didit --private --source=. --push
    ```
 
 > 关于 token：有效的 GitHub classic token 长这样 `ghp_` + 约 36 位字符；

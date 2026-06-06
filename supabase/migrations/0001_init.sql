@@ -1,5 +1,5 @@
 -- ============================================================================
--- Payday — initial schema
+-- DidIt (做了么) — initial schema
 -- A virtual-currency self-discipline system.
 -- Run this in the Supabase SQL editor (or via `supabase db push`).
 -- ============================================================================
@@ -242,10 +242,10 @@ $$;
 do $$
 begin
   if exists (select 1 from pg_extension where extname = 'pg_cron') then
-    perform cron.unschedule('payday_daily_deduction')
-      where exists (select 1 from cron.job where jobname = 'payday_daily_deduction');
+    perform cron.unschedule('didit_daily_deduction')
+      where exists (select 1 from cron.job where jobname = 'didit_daily_deduction');
     perform cron.schedule(
-      'payday_daily_deduction',
+      'didit_daily_deduction',
       '0 16 * * *',                 -- 16:00 UTC == 00:00 Asia/Shanghai
       $cron$ select public.apply_daily_deduction(); $cron$
     );

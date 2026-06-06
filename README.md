@@ -1,4 +1,4 @@
-# Payday 🪙
+# DidIt 🪙 （做了么）
 
 A small, invite-only web app that turns self-discipline into a game with a
 **virtual RMB economy**. Every day at midnight the system charges you a
