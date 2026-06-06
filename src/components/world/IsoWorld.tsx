@@ -10,6 +10,56 @@ const ROWS = 6
 
 const BODY_COLORS = [0x8b5cf6, 0x3b82f6, 0x10b981, 0xec4899, 0xf59e0b, 0x06b6d4, 0xef4444, 0x14b8a6]
 
+// ── hand-drawn pixel villager (straw-hat chibi). 12×12 grid. ──
+const PX = 3
+const CHAR_SHEET = [
+  '....oooo....',
+  '...ohhhho...',
+  '..oooooooo..',
+  '...okkkko...',
+  '...oekkeo...',
+  '...okkkko...',
+  '....okko....',
+  '..osssssso..',
+  '..osssssso..',
+  '.kosssssok.',
+  '...oppppo...',
+  '...obbbbo...',
+]
+function charColor(ch: string, shirt: number): number | null {
+  switch (ch) {
+    case 'o':
+      return 0x3a2a1a // outline
+    case 'h':
+      return 0xd9b35c // straw hat
+    case 'k':
+      return 0xf2c79a // skin
+    case 'e':
+      return 0x2a1f16 // eyes
+    case 's':
+      return shirt // shirt (per user)
+    case 'p':
+      return 0x46618f // pants
+    case 'b':
+      return 0x6b4a2a // boots
+    default:
+      return null
+  }
+}
+function buildPixelChar(shirt: number): Graphics {
+  const g = new Graphics()
+  const W = CHAR_SHEET[0].length
+  const H = CHAR_SHEET.length
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const col = charColor(CHAR_SHEET[y][x], shirt)
+      if (col == null) continue
+      g.rect((x - W / 2) * PX, (y - H) * PX, PX, PX).fill(col)
+    }
+  }
+  return g
+}
+
 function hash(s: string): number {
   let h = 0
   for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0
@@ -139,10 +189,9 @@ export default function IsoWorld({ peers, onPoke }: Props) {
         const c = new Container()
         const color = BODY_COLORS[hash(peer.id) % BODY_COLORS.length]
 
-        const shadow = new Graphics().ellipse(0, 0, 16, 7).fill({ color: 0x000000, alpha: 0.25 })
-        const body = new Graphics().roundRect(-10, -30, 20, 25, 9).fill(color).stroke({ width: 1, color: 0x000000, alpha: 0.15 })
-        const head = new Graphics().circle(0, -34, 10).fill(0xf6d2b0).stroke({ width: 1, color: 0x000000, alpha: 0.12 })
-        c.addChild(shadow, body, head)
+        const shadow = new Graphics().ellipse(0, 0, 15, 6).fill({ color: 0x000000, alpha: 0.22 })
+        const sprite = buildPixelChar(color)
+        c.addChild(shadow, sprite)
 
         // bubble: "🔥 Amy 3/5"
         const label = `${statusEmoji(peer)} ${peer.username} ${peer.total > 0 ? `${peer.doneCount}/${peer.total}` : ''}`.trim()
