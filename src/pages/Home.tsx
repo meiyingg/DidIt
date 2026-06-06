@@ -1,17 +1,19 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { SlidersHorizontal, LogOut } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { priceTask } from '../lib/pricing'
 import { useAuth } from '../contexts/AuthContext'
-import type { FixedTask, Profile, Task, WalletLog } from '../lib/types'
+import { useProfile } from '../contexts/ProfileContext'
+import type { FixedTask, Task, WalletLog } from '../lib/types'
 import BalanceCard from '../components/BalanceCard'
 import TaskItem from '../components/TaskItem'
 import AddTaskForm from '../components/AddTaskForm'
 import WalletHistory from '../components/WalletHistory'
 import FixedTasksManager from '../components/FixedTasksManager'
 
-export default function Dashboard() {
+export default function Home() {
   const { user, signOut } = useAuth()
-  const [profile, setProfile] = useState<Profile | null>(null)
+  const { profile, refresh: refreshProfile } = useProfile()
   const [tasks, setTasks] = useState<Task[]>([])
   const [fixedTasks, setFixedTasks] = useState<FixedTask[]>([])
   const [logs, setLogs] = useState<WalletLog[]>([])
@@ -23,13 +25,10 @@ export default function Dashboard() {
     if (!user) return
     setError(null)
     try {
-      // Materialise today's required tasks from the template, then read everything.
       await supabase.rpc('ensure_today_tasks')
+      const today = new Date().toLocaleDateString('en-CA')
 
-      const today = new Date().toLocaleDateString('en-CA') // YYYY-MM-DD, local
-
-      const [profileRes, tasksRes, fixedRes, logsRes] = await Promise.all([
-        supabase.from('profiles').select('*').eq('id', user.id).single(),
+      const [tasksRes, fixedRes, logsRes] = await Promise.all([
         supabase
           .from('tasks')
           .select('*')
@@ -46,12 +45,10 @@ export default function Dashboard() {
           .limit(20),
       ])
 
-      if (profileRes.error) throw profileRes.error
       if (tasksRes.error) throw tasksRes.error
       if (fixedRes.error) throw fixedRes.error
       if (logsRes.error) throw logsRes.error
 
-      setProfile(profileRes.data)
       setTasks(tasksRes.data ?? [])
       setFixedTasks(fixedRes.data ?? [])
       setLogs(logsRes.data ?? [])
@@ -66,54 +63,38 @@ export default function Dashboard() {
     load()
   }, [load])
 
+  async function after() {
+    await Promise.all([load(), refreshProfile()])
+  }
+
   async function completeTask(id: string) {
     const { error: rpcError } = await supabase.rpc('complete_task', { p_task_id: id })
-    if (rpcError) {
-      setError(rpcError.message)
-      return
-    }
-    await load()
+    if (rpcError) return setError(rpcError.message)
+    await after()
   }
 
   async function addTask(name: string) {
     if (!user) return
     const reward = await priceTask(name)
-    const { error: insErr } = await supabase.from('tasks').insert({
-      user_id: user.id,
-      name,
-      type: 'custom',
-      reward,
-    })
-    if (insErr) {
-      setError(insErr.message)
-      return
-    }
-    await load()
+    const { error: e } = await supabase.from('tasks').insert({ user_id: user.id, name, type: 'custom', reward })
+    if (e) return setError(e.message)
+    await after()
   }
 
   async function addFixed(name: string) {
     if (!user) return
     const reward = await priceTask(name)
-    const { error: insErr } = await supabase.from('fixed_tasks').insert({
-      user_id: user.id,
-      name,
-      reward,
-      sort_order: fixedTasks.length,
-    })
-    if (insErr) {
-      setError(insErr.message)
-      return
-    }
-    await load()
+    const { error: e } = await supabase
+      .from('fixed_tasks')
+      .insert({ user_id: user.id, name, reward, sort_order: fixedTasks.length })
+    if (e) return setError(e.message)
+    await after()
   }
 
   async function removeFixed(id: string) {
-    const { error: delErr } = await supabase.from('fixed_tasks').delete().eq('id', id)
-    if (delErr) {
-      setError(delErr.message)
-      return
-    }
-    await load()
+    const { error: e } = await supabase.from('fixed_tasks').delete().eq('id', id)
+    if (e) return setError(e.message)
+    await after()
   }
 
   const { required, custom, doneCount, todayDelta } = useMemo(() => {
@@ -127,13 +108,8 @@ export default function Dashboard() {
     return { required, custom, doneCount, todayDelta }
   }, [tasks, logs])
 
-  if (loading) {
-    return <div className="flex min-h-screen items-center justify-center text-slate-400">Loading…</div>
-  }
-
   return (
-    <div className="mx-auto min-h-screen max-w-md px-4 pb-16 pt-6">
-      {/* Header */}
+    <>
       <header className="mb-5 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900 text-lg font-bold text-white">
@@ -148,9 +124,10 @@ export default function Dashboard() {
         </div>
         <button
           onClick={signOut}
-          className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600 shadow-sm transition hover:bg-slate-50"
+          className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50"
+          aria-label="Sign out"
         >
-          Sign out
+          <LogOut size={17} />
         </button>
       </header>
 
@@ -160,48 +137,53 @@ export default function Dashboard() {
         </div>
       )}
 
-      {profile && (
-        <BalanceCard
-          balance={profile.balance}
-          vouchers={profile.vouchers}
-          todayDelta={todayDelta}
-          doneCount={doneCount}
-          totalCount={tasks.length}
-        />
-      )}
+      <BalanceCard
+        balance={profile?.balance ?? 0}
+        vouchers={profile?.vouchers ?? 0}
+        todayDelta={todayDelta}
+        doneCount={doneCount}
+        totalCount={tasks.length}
+      />
 
-      {/* Tasks */}
       <section className="mt-6">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400">Today</h2>
           <button
             onClick={() => setShowFixed(true)}
-            className="text-sm font-medium text-indigo-600 transition hover:text-indigo-500"
+            className="flex items-center gap-1 text-sm font-medium text-indigo-600 transition hover:text-indigo-500"
           >
-            Edit required
+            <SlidersHorizontal size={14} /> Required
           </button>
         </div>
 
-        {required.length > 0 && (
-          <ul className="mb-2 space-y-2">
-            {required.map((t) => (
-              <TaskItem key={t.id} task={t} onComplete={completeTask} />
+        {loading ? (
+          <div className="space-y-2">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="h-[52px] animate-pulse rounded-xl bg-slate-100" />
             ))}
-          </ul>
-        )}
-
-        {custom.length > 0 && (
-          <ul className="mb-2 space-y-2">
-            {custom.map((t) => (
-              <TaskItem key={t.id} task={t} onComplete={completeTask} />
-            ))}
-          </ul>
-        )}
-
-        {tasks.length === 0 && (
-          <p className="mb-3 rounded-xl border border-dashed border-slate-200 px-4 py-6 text-center text-sm text-slate-400">
-            No tasks yet. Add one below, or set up your daily required list.
-          </p>
+          </div>
+        ) : (
+          <>
+            {required.length > 0 && (
+              <ul className="mb-2 space-y-2">
+                {required.map((t) => (
+                  <TaskItem key={t.id} task={t} onComplete={completeTask} />
+                ))}
+              </ul>
+            )}
+            {custom.length > 0 && (
+              <ul className="mb-2 space-y-2">
+                {custom.map((t) => (
+                  <TaskItem key={t.id} task={t} onComplete={completeTask} />
+                ))}
+              </ul>
+            )}
+            {tasks.length === 0 && (
+              <p className="mb-3 rounded-xl border border-dashed border-slate-200 px-4 py-6 text-center text-sm text-slate-400">
+                No tasks yet. Add one below, or set up your daily required list.
+              </p>
+            )}
+          </>
         )}
 
         <div className="mt-3">
@@ -209,7 +191,6 @@ export default function Dashboard() {
         </div>
       </section>
 
-      {/* History */}
       <section className="mt-8">
         <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
           Recent activity
@@ -225,6 +206,6 @@ export default function Dashboard() {
           onClose={() => setShowFixed(false)}
         />
       )}
-    </div>
+    </>
   )
 }
