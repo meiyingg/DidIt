@@ -31,7 +31,7 @@ pnpm install
 
 1. Go to [supabase.com](https://supabase.com) and create a free project.
 2. Open **SQL Editor** and run the contents of
-   [`supabase/migrations/0001_init.sql`](supabase/migrations/0001_init.sql).
+   [`supabase/schema.sql`](supabase/schema.sql).
    This creates all tables, row-level-security policies, the new-user trigger,
    the `complete_task` / `ensure_today_tasks` functions, and the daily
    deduction job.
@@ -89,7 +89,8 @@ src/
   lib/           supabase client, types, formatters
   pages/         Login, Dashboard
 supabase/
-  migrations/    0001_init.sql  (schema + RLS + functions + cron)
+  schema.sql     (tables + RLS + triggers + functions + cron — ledger-driven)
+  functions/     price-task, daily-summary  (Edge Functions)
 ```
 
 ## Security notes

@@ -42,8 +42,10 @@ body {
 
 /* pixel display font for headings / numbers / labels */
 .font-pixel {
-  font-family: 'Pixelify Sans', 'Inter', system-ui, sans-serif;
-  letter-spacing: 0.01em;
+  font-family: 'DotGothic16', 'Inter', system-ui, sans-serif;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  font-synthesis: none; /* keep pixels crisp — no faux bold */
 }
 
 /* keep any pixel-art images crisp */
@@ -76,12 +78,162 @@ input[type='number'] {
   appearance: textfield;
 }
 
-/* cozy card panel: cream fill, tan border, soft "stacked" shadow */
+/* ════════ Pixel-game UI kit ════════ */
+
+/* wood-framed parchment panel */
+.px-panel {
+  position: relative;
+  background: #fff5dd;
+  border: 3px solid #6b4a24;
+  border-radius: 10px;
+  box-shadow:
+    inset 0 0 0 2px #f4d9a6,
+    0 4px 0 0 #6b4a24,
+    0 12px 22px -12px rgba(43, 30, 12, 0.45);
+}
+/* keep legacy name working */
 .panel {
-  background: var(--color-panel);
-  border: 1.5px solid var(--color-line);
-  border-radius: 14px;
-  box-shadow: 0 2px 0 0 var(--color-line), 0 6px 14px -8px rgba(67, 56, 31, 0.25);
+  position: relative;
+  background: #fff5dd;
+  border: 3px solid #6b4a24;
+  border-radius: 10px;
+  box-shadow:
+    inset 0 0 0 2px #f4d9a6,
+    0 4px 0 0 #6b4a24,
+    0 12px 22px -12px rgba(43, 30, 12, 0.45);
+}
+
+/* colored title bar that sits at the top of a panel */
+.px-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border-radius: 7px 7px 0 0;
+  border-bottom: 3px solid rgba(0, 0, 0, 0.28);
+  color: #fff;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
+}
+.px-h-green {
+  background: #6aa84f;
+}
+.px-h-blue {
+  background: #4a90d9;
+}
+.px-h-amber {
+  background: #e0a23c;
+}
+.px-h-purple {
+  background: #9268c9;
+}
+.px-h-teal {
+  background: #3fa99a;
+}
+.px-h-berry {
+  background: #d9544d;
+}
+
+/* juicy pressable pixel button */
+.px-btn {
+  font-family: 'DotGothic16', sans-serif;
+  font-weight: 700;
+  color: #fff;
+  background: #6aa84f;
+  border: 2px solid #3c6b28;
+  border-radius: 9px;
+  padding: 9px 16px;
+  box-shadow: 0 4px 0 0 #3c6b28, inset 0 2px 0 rgba(255, 255, 255, 0.35);
+  transition: transform 0.05s, box-shadow 0.05s, filter 0.1s;
+}
+.px-btn:hover:not(:disabled) {
+  filter: brightness(1.06);
+}
+.px-btn:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 0 #3c6b28, inset 0 2px 0 rgba(255, 255, 255, 0.35);
+}
+.px-btn:disabled {
+  opacity: 0.55;
+}
+.px-btn-amber {
+  background: #e0a23c;
+  border-color: #a9770f;
+  box-shadow: 0 4px 0 0 #a9770f, inset 0 2px 0 rgba(255, 255, 255, 0.35);
+}
+.px-btn-amber:active:not(:disabled) {
+  box-shadow: 0 1px 0 0 #a9770f, inset 0 2px 0 rgba(255, 255, 255, 0.35);
+}
+
+/* pixel checkbox */
+.px-check {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff8e8;
+  border: 2px solid #6b4a24;
+  border-radius: 5px;
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.08);
+  color: transparent;
+  transition: transform 0.05s;
+}
+.px-check:hover:not(.is-done) {
+  border-color: #6aa84f;
+}
+.px-check.is-done {
+  background: #6aa84f;
+  border-color: #3c6b28;
+  color: #fff;
+}
+
+/* coin / reward pill */
+.px-coin {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-family: 'DotGothic16', sans-serif;
+  font-weight: 700;
+  color: #9a6a0c;
+  background: #fff1c9;
+  border: 2px solid #e7c067;
+  border-radius: 999px;
+  padding: 1px 9px;
+  white-space: nowrap;
+}
+
+/* pixel text input */
+.px-input {
+  background: #fffdf5;
+  border: 2px solid #c9a772;
+  border-radius: 9px;
+  padding: 9px 12px;
+  color: var(--color-ink);
+  box-shadow: inset 0 2px 0 rgba(0, 0, 0, 0.05);
+  outline: none;
+}
+.px-input::placeholder {
+  color: #b6a578;
+}
+.px-input:focus {
+  border-color: #6aa84f;
+}
+
+/* pixel progress bar */
+.px-bar {
+  height: 14px;
+  background: #e7d4ac;
+  border: 2px solid #6b4a24;
+  border-radius: 999px;
+  overflow: hidden;
+  box-shadow: inset 0 2px 0 rgba(0, 0, 0, 0.12);
+}
+.px-bar > span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(#7cc24a, #5a9e30);
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.4);
+  transition: width 0.5s ease;
 }
 
 @keyframes fade-up {
@@ -105,4 +257,58 @@ input[type='number'] {
 }
 .animate-float {
   animation: float-y 3s ease-in-out infinite;
+}
+
+/* gentle idle bob for world characters */
+@keyframes char-bob {
+  50% {
+    transform: translateY(-5px);
+  }
+}
+.animate-bob {
+  animation: char-bob 2.8s ease-in-out infinite;
+}
+
+/* ── ambient: falling leaves + animated scene ─────────────────── */
+@keyframes leaf-fall {
+  to {
+    transform: translateY(110vh);
+  }
+}
+@keyframes leaf-sway {
+  from {
+    transform: translateX(-12px) rotate(-22deg);
+  }
+  to {
+    transform: translateX(12px) rotate(22deg);
+  }
+}
+/* cross-fade an alternate scene frame over the base to animate water/grass */
+@keyframes bg-crossfade {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* floating emote reaction above a character */
+@keyframes emote-float {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 0) scale(0.6);
+  }
+  20% {
+    opacity: 1;
+    transform: translate(-50%, -8px) scale(1.2);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -48px) scale(1);
+  }
+}
+.animate-emote {
+  animation: emote-float 1.5s ease-out forwards;
 }

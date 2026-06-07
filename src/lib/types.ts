@@ -2,8 +2,9 @@ export interface Profile {
   id: string
   username: string
   avatar_url: string | null
+  bio: string
   balance: number
-  vouchers: number
+  study_minutes: number
   created_at: string
 }
 
@@ -31,7 +32,12 @@ export interface FixedTask {
   created_at: string
 }
 
-export type WalletLogType = 'task_reward' | 'study_reward' | 'daily_deduction'
+export type WalletLogType =
+  | 'task_reward'
+  | 'study_reward'
+  | 'daily_deduction'
+  | 'purchase'
+  | 'adjustment'
 
 export interface WalletLog {
   id: string

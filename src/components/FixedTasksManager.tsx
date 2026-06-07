@@ -46,7 +46,7 @@ export default function FixedTasksManager({ fixedTasks, onAdd, onRemove, onClose
           </button>
         </div>
         <p className="mb-4 text-sm text-zinc-500">
-          These appear automatically every day. Finish all of them to earn a guilt-free voucher.
+          These appear automatically every day — your daily must-dos to stay in the black.
         </p>
 
         <ul className="mb-4 space-y-2">

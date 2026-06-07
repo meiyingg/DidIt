@@ -8,6 +8,11 @@ export interface Peer {
   username: string
   doneCount: number
   total: number
+  balance: number
+  character: string
+  activity: string
+  x: number
+  y: number
   isMe: boolean
 }
 
@@ -16,24 +21,53 @@ export interface IncomingPoke {
   ts: number
 }
 
+export interface FloatingEmote {
+  id: number
+  peerId: string
+  emoji: string
+}
+
 interface Meta {
   username: string
   doneCount: number
   total: number
+  balance: number
+  character: string
+  activity?: string
 }
 
 /**
- * Realtime "world" presence over a Supabase channel.
- * - Tracks everyone currently online + their today progress (no DB tables needed).
- * - `poke(id)` broadcasts a nudge; the target receives it via `incoming`.
+ * Realtime "world": presence (who's online, position, character, activity) +
+ * broadcast interactions (poke, chat bubble, floating emote).
  */
 export function useWorld(meta: Meta) {
   const { user } = useAuth()
   const [peers, setPeers] = useState<Peer[]>([])
   const [incoming, setIncoming] = useState<IncomingPoke | null>(null)
+  const [messages, setMessages] = useState<Record<string, string>>({})
+  const [emotes, setEmotes] = useState<FloatingEmote[]>([])
+  const [pos, setPos] = useState(() => ({ x: 35 + Math.random() * 30, y: 64 + Math.random() * 20 }))
   const channelRef = useRef<RealtimeChannel | null>(null)
+  const emoteId = useRef(0)
 
-  // Join the channel once per user.
+  function showMessage(peerId: string, text: string) {
+    setMessages((m) => ({ ...m, [peerId]: text }))
+    setTimeout(() => {
+      setMessages((m) => {
+        if (m[peerId] !== text) return m
+        const next = { ...m }
+        delete next[peerId]
+        return next
+      })
+    }, 6000)
+  }
+
+  function spawnEmote(peerId: string, emoji: string) {
+    const id = ++emoteId.current
+    setEmotes((e) => [...e, { id, peerId, emoji }])
+    setTimeout(() => setEmotes((e) => e.filter((x) => x.id !== id)), 1500)
+  }
+
   useEffect(() => {
     if (!user) return
     const channel = supabase.channel('world', {
@@ -41,7 +75,7 @@ export function useWorld(meta: Meta) {
     })
 
     channel.on('presence', { event: 'sync' }, () => {
-      const state = channel.presenceState<Meta & { presence_ref: string }>()
+      const state = channel.presenceState<Meta & { x: number; y: number; presence_ref: string }>()
       const list: Peer[] = Object.entries(state).map(([id, metas]) => {
         const m = metas[0]
         return {
@@ -49,28 +83,29 @@ export function useWorld(meta: Meta) {
           username: m?.username ?? 'Anon',
           doneCount: m?.doneCount ?? 0,
           total: m?.total ?? 0,
+          balance: typeof m?.balance === 'number' ? m.balance : 0,
+          character: m?.character ?? 'hoodie',
+          activity: m?.activity ?? '',
+          x: typeof m?.x === 'number' ? m.x : 50,
+          y: typeof m?.y === 'number' ? m.y : 75,
           isMe: id === user.id,
         }
       })
-      // me first, then by progress
-      list.sort((a, b) => Number(b.isMe) - Number(a.isMe))
       setPeers(list)
     })
 
     channel.on('broadcast', { event: 'poke' }, ({ payload }) => {
-      if (payload?.to === user.id) {
-        setIncoming({ fromName: payload.fromName ?? 'Someone', ts: Date.now() })
-      }
+      if (payload?.to === user.id) setIncoming({ fromName: payload.fromName ?? 'Someone', ts: Date.now() })
+    })
+    channel.on('broadcast', { event: 'chat' }, ({ payload }) => {
+      if (payload?.from && payload?.text) showMessage(payload.from, String(payload.text))
+    })
+    channel.on('broadcast', { event: 'emote' }, ({ payload }) => {
+      if (payload?.from && payload?.emoji) spawnEmote(payload.from, String(payload.emoji))
     })
 
     channel.subscribe(async (status) => {
-      if (status === 'SUBSCRIBED') {
-        await channel.track({
-          username: meta.username,
-          doneCount: meta.doneCount,
-          total: meta.total,
-        })
-      }
+      if (status === 'SUBSCRIBED') await channel.track({ ...meta, x: pos.x, y: pos.y })
     })
 
     channelRef.current = channel
@@ -81,23 +116,37 @@ export function useWorld(meta: Meta) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
 
-  // Re-broadcast my state when my progress changes.
+  // re-broadcast my state when it changes
   useEffect(() => {
-    channelRef.current?.track({
-      username: meta.username,
-      doneCount: meta.doneCount,
-      total: meta.total,
-    })
-  }, [meta.username, meta.doneCount, meta.total])
+    channelRef.current?.track({ ...meta, x: pos.x, y: pos.y })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [meta.username, meta.doneCount, meta.total, meta.balance, meta.character, meta.activity, pos.x, pos.y])
 
   function poke(to: string) {
     if (!user) return
-    channelRef.current?.send({
-      type: 'broadcast',
-      event: 'poke',
-      payload: { to, from: user.id, fromName: meta.username },
-    })
+    channelRef.current?.send({ type: 'broadcast', event: 'poke', payload: { to, from: user.id, fromName: meta.username } })
+  }
+  function say(text: string) {
+    if (!user || !text.trim()) return
+    const t = text.trim().slice(0, 120)
+    channelRef.current?.send({ type: 'broadcast', event: 'chat', payload: { from: user.id, fromName: meta.username, text: t } })
+    showMessage(user.id, t)
+  }
+  function emote(emoji: string) {
+    if (!user) return
+    channelRef.current?.send({ type: 'broadcast', event: 'emote', payload: { from: user.id, emoji } })
+    spawnEmote(user.id, emoji)
+  }
+  function moveTo(x: number, y: number) {
+    setPos({ x: Math.max(5, Math.min(95, x)), y: Math.max(32, Math.min(92, y)) })
   }
 
-  return { peers, poke, incoming }
+  // my own card reflects my latest state immediately (no presence round-trip lag)
+  const renderedPeers = peers.map((p) =>
+    p.isMe
+      ? { ...p, x: pos.x, y: pos.y, balance: meta.balance, doneCount: meta.doneCount, total: meta.total, character: meta.character, activity: meta.activity ?? '' }
+      : p,
+  )
+
+  return { peers: renderedPeers, poke, say, emote, moveTo, incoming, messages, emotes }
 }

@@ -1,107 +1,164 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import type { Profile } from '../lib/types'
 import { money } from '../lib/format'
-import { Card, Label } from '../components/ui'
+import { charImg } from '../lib/characters'
+import Container from '../components/Container'
+import { Label, Panel } from '../components/ui'
+import Icon from '../components/Icon'
+import Coin from '../components/Coin'
 
-type Tab = 'wealth' | 'tasks' | 'study'
-const TABS: { key: Tab; label: string }[] = [
-  { key: 'wealth', label: 'Wealth' },
-  { key: 'tasks', label: 'Tasks' },
-  { key: 'study', label: 'Study' },
+type Metric = 'study' | 'wealth'
+
+const medalSrc = (rank: number) => `/assets/medal-${rank + 1}.png`
+const PEDESTAL = ['linear-gradient(#f7d069,#e0a23c)', 'linear-gradient(#e7edf4,#aab4c4)', 'linear-gradient(#e6b07a,#c98a4f)']
+const BAR = [
+  'linear-gradient(#f7d069,#e0a23c)',
+  'linear-gradient(#e7edf4,#aab4c4)',
+  'linear-gradient(#e6b07a,#c98a4f)',
+  'linear-gradient(#7cc24a,#5a9e30)',
 ]
-const MEDALS = ['🥇', '🥈', '🥉']
+const PODIUM_H = [96, 64, 44]
+
+const studyMin = (p: Profile) => Number(p.study_minutes ?? 0)
+const fmtStudy = (v: number) => `${Math.floor(v / 60)}h ${v % 60}m`
+const avatar = (p: Profile) => charImg(p.avatar_url)
 
 export default function Ranking() {
   const { user } = useAuth()
-  const [tab, setTab] = useState<Tab>('wealth')
-  const [rows, setRows] = useState<Profile[]>([])
+  const [all, setAll] = useState<Profile[]>([])
   const [loading, setLoading] = useState(true)
+  const [metric, setMetric] = useState<Metric>('study')
 
   useEffect(() => {
-    ;(async () => {
-      setLoading(true)
-      const { data } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('balance', { ascending: false })
-        .limit(50)
-      setRows(data ?? [])
-      setLoading(false)
-    })()
+    supabase
+      .from('profiles')
+      .select('*')
+      .limit(50)
+      .then(({ data }) => {
+        setAll(data ?? [])
+        setLoading(false)
+      })
   }, [])
 
+  const valueOf = (p: Profile) => (metric === 'study' ? studyMin(p) : Number(p.balance))
+  const fmt = (v: number) => (metric === 'study' ? fmtStudy(v) : money(v))
+
+  const rows = useMemo(() => [...all].sort((a, b) => valueOf(b) - valueOf(a)), [all, metric])
+
+  const vals = rows.map(valueOf)
+  const max = Math.max(...vals, 1)
+  const min = Math.min(...vals, 0)
+  const span = Math.max(1, max - min)
+
+  const top3 = rows.slice(0, 3)
+  const podiumOrder = [top3[1], top3[0], top3[2]].filter(Boolean) as Profile[]
+
   return (
-    <div className="animate-fade-up">
-      <header className="mb-6">
+    <Container className="animate-fade-up">
+      <header className="mb-4">
         <Label>Leaderboard</Label>
-        <h1 className="mt-1 text-2xl font-bold tracking-tight text-zinc-900">Ranking</h1>
+        <h1 className="font-pixel mt-1 flex items-center gap-2 text-2xl font-bold text-[color:var(--color-ink)]">
+          {metric === 'study' ? <Icon src="icon-study" className="h-7 w-7" /> : <Coin className="h-7 w-7" />}
+          {metric === 'study' ? 'Study Champions' : 'Hall of Wealth'}
+        </h1>
       </header>
 
-      <div className="mb-4 inline-flex rounded-lg border border-zinc-200 bg-white p-1">
-        {TABS.map((t) => (
+      {/* tabs */}
+      <div className="mb-4 inline-flex rounded-xl border-2 border-[#6b4a24] bg-[#fff5dd] p-1">
+        {(['study', 'wealth'] as Metric[]).map((m) => (
           <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
-            className={`rounded-md px-4 py-1.5 text-sm font-medium transition ${
-              tab === t.key ? 'bg-zinc-950 text-white' : 'text-zinc-500 hover:text-zinc-900'
+            key={m}
+            onClick={() => setMetric(m)}
+            className={`font-pixel flex items-center justify-center gap-1.5 rounded-lg px-4 py-1.5 text-sm font-bold transition ${
+              metric === m ? 'bg-[#6aa84f] text-white shadow-[0_2px_0_#3c6b28]' : 'text-[color:var(--color-muted)]'
             }`}
           >
-            {t.label}
+            {m === 'study' ? <Icon src="icon-timer" className="h-4 w-4" /> : <Coin className="h-4 w-4" />}
+            {m === 'study' ? 'Study time' : 'Wealth'}
           </button>
         ))}
       </div>
 
-      {tab !== 'wealth' ? (
-        <Card padded={false}>
-          <div className="px-4 py-12 text-center text-sm text-zinc-400">
-            {tab === 'tasks' ? 'Task' : 'Study time'} ranking arrives with the next features.
-          </div>
-        </Card>
-      ) : loading ? (
-        <div className="space-y-2">
-          {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="h-14 animate-pulse rounded-xl bg-zinc-100" />
-          ))}
-        </div>
+      {loading ? (
+        <div className="px-panel h-48 animate-pulse" />
       ) : (
-        <Card padded={false}>
-          <ul className="divide-y divide-zinc-100">
-            {rows.map((p, i) => {
-              const isMe = p.id === user?.id
-              return (
-                <li
-                  key={p.id}
-                  className={`flex items-center gap-3 px-4 py-3 ${isMe ? 'bg-zinc-50' : ''}`}
-                >
-                  <span className="w-6 text-center text-sm font-bold tabular-nums text-zinc-400">
-                    {i < 3 ? <span className="text-base">{MEDALS[i]}</span> : i + 1}
-                  </span>
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-zinc-100 text-sm font-bold text-zinc-600">
-                    {p.username.charAt(0).toUpperCase()}
-                  </div>
-                  <span className="min-w-0 flex-1 truncate text-sm font-medium text-zinc-900">
-                    {p.username}
-                    {isMe && (
-                      <span className="ml-1.5 rounded bg-violet-100 px-1.5 py-0.5 text-[10px] font-semibold text-violet-700">
-                        You
-                      </span>
-                    )}
-                  </span>
-                  <span
-                    className={`text-sm font-bold tabular-nums ${
-                      p.balance < 0 ? 'text-rose-600' : 'text-zinc-900'
-                    }`}
-                  >
-                    {money(p.balance)}
-                  </span>
-                </li>
-              )
-            })}
-          </ul>
-        </Card>
+        <>
+          {/* podium */}
+          {top3.length > 0 && (
+            <div className="px-panel mb-4 overflow-hidden bg-gradient-to-b from-[#fff3d0] to-[#fff8e8] p-4">
+              <div className="flex items-end justify-center gap-3 sm:gap-6">
+                {podiumOrder.map((p) => {
+                  const rank = rows.indexOf(p)
+                  const isMe = p.id === user?.id
+                  const v = valueOf(p)
+                  return (
+                    <div key={p.id} className="flex w-20 flex-col items-center sm:w-24">
+                      <img src={medalSrc(rank)} alt="" className="h-9 w-9 object-contain" draggable={false} />
+                      <div
+                        className={`mt-1 overflow-hidden rounded-2xl border-2 bg-[#f3e6c8] ${isMe ? 'border-violet-500' : 'border-[#6b4a24]'}`}
+                        style={{ width: rank === 0 ? 64 : 52, height: rank === 0 ? 64 : 52 }}
+                      >
+                        <img src={avatar(p)} alt="" className="h-full w-full object-cover" onError={(e) => ((e.currentTarget as HTMLImageElement).src = '/assets/char.png')} />
+                      </div>
+                      <p className="font-pixel mt-1 max-w-full truncate text-xs font-bold text-[color:var(--color-ink)]">{p.username}</p>
+                      <p className={`font-pixel text-xs font-bold ${metric === 'wealth' && p.balance < 0 ? 'text-[color:var(--color-berry)]' : 'text-[color:var(--color-grass-dark)]'}`}>
+                        {fmt(v)}
+                      </p>
+                      <div
+                        className="mt-1.5 flex w-full items-start justify-center rounded-t-lg border-2 border-b-0 border-[#6b4a24] pt-1 font-pixel text-lg font-bold text-white/90"
+                        style={{ height: PODIUM_H[rank], background: PEDESTAL[rank] }}
+                      >
+                        {rank + 1}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* bar chart */}
+          <Panel title={metric === 'study' ? 'Study time ranking' : 'Wealth ranking'} icon={<Icon src="icon-chart" />} color="amber">
+            <ul className="space-y-2.5">
+              {rows.map((p, i) => {
+                const isMe = p.id === user?.id
+                const v = valueOf(p)
+                const pct = ((v - min) / span) * 100
+                return (
+                  <li key={p.id} className={`flex items-center gap-2.5 rounded-lg px-1.5 py-1 ${isMe ? 'bg-[#f3e7c6]' : ''}`}>
+                    <span className="flex w-6 justify-center text-center text-sm">
+                      {i < 3 ? (
+                        <img src={medalSrc(i)} alt="" className="h-5 w-5 object-contain" draggable={false} />
+                      ) : (
+                        <span className="font-pixel text-[color:var(--color-faint)]">{i + 1}</span>
+                      )}
+                    </span>
+                    <div className="h-9 w-9 shrink-0 overflow-hidden rounded-lg border-2 border-[#6b4a24] bg-[#f3e6c8]">
+                      <img src={avatar(p)} alt="" className="h-full w-full object-cover" onError={(e) => ((e.currentTarget as HTMLImageElement).src = '/assets/char.png')} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="mb-1 flex items-center justify-between gap-2">
+                        <span className="font-pixel truncate text-sm font-semibold text-[color:var(--color-ink)]">
+                          {p.username}
+                          {isMe && <span className="ml-1 rounded bg-violet-200 px-1 text-[10px] text-violet-800">You</span>}
+                        </span>
+                        <span className={`font-pixel shrink-0 text-sm font-bold ${metric === 'wealth' && p.balance < 0 ? 'text-[color:var(--color-berry)]' : 'text-[color:var(--color-ink)]'}`}>
+                          {fmt(v)}
+                        </span>
+                      </div>
+                      <div className="px-bar !h-3">
+                        <span style={{ width: `${Math.max(3, pct)}%`, background: BAR[Math.min(i, 3)] }} />
+                      </div>
+                    </div>
+                  </li>
+                )
+              })}
+            </ul>
+          </Panel>
+        </>
       )}
-    </div>
+    </Container>
   )
 }

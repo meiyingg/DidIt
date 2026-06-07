@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react'
-import type { LucideIcon } from 'lucide-react'
 
-/** Cozy wood-panel surface used by every card in the app. */
+type HeaderColor = 'green' | 'blue' | 'amber' | 'purple' | 'teal' | 'berry'
+
+/** Plain wood-framed parchment panel. */
 export function Card({
   children,
   className = '',
@@ -11,19 +12,47 @@ export function Card({
   className?: string
   padded?: boolean
 }) {
-  return <div className={`panel ${padded ? 'p-5' : ''} ${className}`}>{children}</div>
+  return <div className={`px-panel ${padded ? 'p-4' : ''} ${className}`}>{children}</div>
 }
 
-/** Small pixel-font label / eyebrow. */
+/** Panel with a colored pixel title bar (the game-UI look). */
+export function Panel({
+  title,
+  icon,
+  color = 'green',
+  action,
+  children,
+  className = '',
+  bodyClass = 'p-4',
+}: {
+  title: string
+  icon?: ReactNode
+  color?: HeaderColor
+  action?: ReactNode
+  children: ReactNode
+  className?: string
+  bodyClass?: string
+}) {
+  return (
+    <div className={`px-panel overflow-hidden ${className}`}>
+      <div className={`px-header px-h-${color}`}>
+        {icon && <span className="text-lg leading-none">{icon}</span>}
+        <h3 className="font-pixel flex-1 text-[15px] font-bold">{title}</h3>
+        {action}
+      </div>
+      <div className={bodyClass}>{children}</div>
+    </div>
+  )
+}
+
 export function Label({ children, className = '' }: { children: ReactNode; className?: string }) {
   return (
-    <span className={`font-pixel text-xs font-semibold uppercase tracking-wide text-[color:var(--color-muted)] ${className}`}>
+    <span className={`font-pixel text-[11px] font-semibold uppercase tracking-wide text-[color:var(--color-muted)] ${className}`}>
       {children}
     </span>
   )
 }
 
-/** Section header: pixel title on the left, optional action on the right. */
 export function SectionTitle({ title, action }: { title: string; action?: ReactNode }) {
   return (
     <div className="mb-3 flex items-center justify-between">
@@ -33,34 +62,32 @@ export function SectionTitle({ title, action }: { title: string; action?: ReactN
   )
 }
 
-/** KPI tile: colored icon chip + label + big pixel value. */
+/** KPI tile: emoji chip + label + big pixel value. */
 export function StatCard({
-  icon: Icon,
+  emoji,
   label,
   value,
-  tile = 'bg-amber-100 text-amber-700',
+  tile = '#fff1c9',
   valueClass = 'text-[color:var(--color-ink)]',
-  sub,
 }: {
-  icon: LucideIcon
+  emoji: ReactNode
   label: string
   value: ReactNode
   tile?: string
   valueClass?: string
-  sub?: ReactNode
 }) {
   return (
-    <Card className="flex items-center gap-3" padded={false}>
-      <div className="flex items-center gap-3 p-4">
-        <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${tile}`}>
-          <Icon size={22} strokeWidth={2.2} />
-        </div>
-        <div className="min-w-0">
-          <Label>{label}</Label>
-          <p className={`font-pixel text-2xl font-bold leading-tight ${valueClass}`}>{value}</p>
-          {sub && <p className="text-xs text-[color:var(--color-faint)]">{sub}</p>}
-        </div>
+    <div className="px-panel flex items-center gap-3 p-3">
+      <div
+        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border-2 border-black/10 text-2xl"
+        style={{ background: tile }}
+      >
+        {emoji}
       </div>
-    </Card>
+      <div className="min-w-0">
+        <Label>{label}</Label>
+        <p className={`font-pixel text-xl font-bold leading-tight ${valueClass}`}>{value}</p>
+      </div>
+    </div>
   )
 }

@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { CHARACTERS } from '../lib/characters'
 
 type Mode = 'signin' | 'signup'
 
@@ -9,6 +10,7 @@ export default function Login() {
   const [email, setEmail] = useState('')
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
+  const [character, setCharacter] = useState(CHARACTERS[0].key)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -22,8 +24,8 @@ export default function Login() {
       if (mode === 'signin') {
         await signIn(email, password)
       } else {
-        await signUp(email, password, username.trim() || email.split('@')[0])
-        setNotice('Account created. If email confirmation is on, check your inbox — otherwise just sign in.')
+        await signUp(email, password, username.trim() || email.split('@')[0], character)
+        setNotice('Account created! If email confirmation is on, check your inbox — otherwise just sign in.')
         setMode('signin')
       }
     } catch (err) {
@@ -34,21 +36,19 @@ export default function Login() {
   }
 
   const input =
-    'w-full rounded-lg border border-zinc-200 bg-white px-3.5 py-2.5 text-sm text-zinc-900 placeholder-zinc-400 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/15'
+    'px-input w-full text-sm'
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-4">
+    <div className="flex min-h-screen items-center justify-center bg-[color:var(--color-canvas)] px-4">
       <div className="w-full max-w-sm animate-fade-up">
-        <div className="mb-7 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-zinc-950 text-xl font-bold text-white">
-            ¥
-          </div>
-          <h1 className="text-xl font-bold tracking-tight text-zinc-900">DidIt</h1>
-          <p className="mt-1 text-sm text-zinc-500">Earn your way out of the red.</p>
+        <div className="mb-6 text-center">
+          <img src="/assets/logo.png" alt="" className="mx-auto mb-2 h-14 w-14 object-contain" />
+          <h1 className="font-pixel text-2xl font-bold text-[color:var(--color-ink)]">DidIt · 做了么</h1>
+          <p className="mt-1 text-sm text-[color:var(--color-muted)]">Earn your way out of the red.</p>
         </div>
 
-        <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-[0_1px_2px_rgba(9,9,11,0.04)]">
-          <div className="mb-5 flex rounded-lg bg-zinc-100 p-1">
+        <div className="px-panel p-6">
+          <div className="mb-5 flex rounded-lg border-2 border-[#e3d2a8] bg-[#fbf2da] p-1">
             {(['signin', 'signup'] as Mode[]).map((m) => (
               <button
                 key={m}
@@ -58,8 +58,8 @@ export default function Login() {
                   setError(null)
                   setNotice(null)
                 }}
-                className={`flex-1 rounded-md py-1.5 text-sm font-medium transition ${
-                  mode === m ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-700'
+                className={`font-pixel flex-1 rounded-md py-1.5 text-sm font-bold transition ${
+                  mode === m ? 'bg-[#6aa84f] text-white shadow-[0_2px_0_#3c6b28]' : 'text-[color:var(--color-muted)]'
                 }`}
               >
                 {m === 'signin' ? 'Sign in' : 'Sign up'}
@@ -74,14 +74,33 @@ export default function Login() {
             )}
             <input type="password" required minLength={6} autoComplete={mode === 'signin' ? 'current-password' : 'new-password'} placeholder="Password (min 6 characters)" value={password} onChange={(e) => setPassword(e.target.value)} className={input} />
 
-            {error && <p className="text-sm text-rose-600">{error}</p>}
-            {notice && <p className="text-sm text-emerald-600">{notice}</p>}
+            {mode === 'signup' && (
+              <div>
+                <p className="font-pixel mb-1.5 text-xs font-bold uppercase tracking-wide text-[color:var(--color-muted)]">
+                  Pick your character (permanent!)
+                </p>
+                <div className="grid grid-cols-4 gap-2">
+                  {CHARACTERS.map((c) => (
+                    <button
+                      key={c.key}
+                      type="button"
+                      onClick={() => setCharacter(c.key)}
+                      className={`flex flex-col items-center rounded-xl border-2 p-1 transition ${
+                        character === c.key ? 'border-[#6aa84f] bg-[#e3f3d6]' : 'border-[#e3d2a8] bg-[#fffdf5] hover:brightness-95'
+                      }`}
+                    >
+                      <img src={c.img} alt={c.name} className="h-12 w-12 object-contain" onError={(e) => ((e.currentTarget as HTMLImageElement).src = '/assets/char.png')} />
+                      <span className="font-pixel mt-0.5 max-w-full truncate text-[10px] font-bold text-[color:var(--color-ink)]">{c.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
-            <button
-              type="submit"
-              disabled={busy}
-              className="w-full rounded-lg bg-zinc-950 py-2.5 text-sm font-semibold text-white transition hover:bg-zinc-800 active:scale-[0.99] disabled:opacity-50"
-            >
+            {error && <p className="text-sm text-[color:var(--color-berry)]">{error}</p>}
+            {notice && <p className="text-sm text-[color:var(--color-grass-dark)]">{notice}</p>}
+
+            <button type="submit" disabled={busy} className="px-btn w-full">
               {busy ? 'Please wait…' : mode === 'signin' ? 'Sign in' : 'Create account'}
             </button>
           </form>

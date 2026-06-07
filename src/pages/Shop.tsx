@@ -1,53 +1,87 @@
-import { Ticket, Wallet, Sparkles } from 'lucide-react'
+import { useState } from 'react'
+import { supabase } from '../lib/supabase'
+import { useAuth } from '../contexts/AuthContext'
 import { useProfile } from '../contexts/ProfileContext'
 import { money } from '../lib/format'
-import { Card, Label, StatCard } from '../components/ui'
+import { Label, StatCard } from '../components/ui'
+import Container from '../components/Container'
+import Coin from '../components/Coin'
 
-const SAMPLE_ITEMS = [
-  { emoji: '🧋', name: 'Boba tea', cost: 30, kind: 'money' as const },
-  { emoji: '🎮', name: '1h gaming', cost: 1, kind: 'voucher' as const },
-  { emoji: '🍿', name: 'Movie night', cost: 1, kind: 'voucher' as const },
-  { emoji: '🛍️', name: 'Small treat', cost: 80, kind: 'money' as const },
-  { emoji: '😴', name: 'Sleep in', cost: 1, kind: 'voucher' as const },
-  { emoji: '🍔', name: 'Cheat meal', cost: 120, kind: 'money' as const },
+const ITEMS = [
+  { img: '/assets/shop-game.png', name: 'Play games', cost: 200 },
+  { img: '/assets/shop-meal.png', name: 'Cheat meal', cost: 200 },
+  { img: '/assets/shop-sleep.png', name: 'Sleep in', cost: 200 },
 ]
 
 export default function Shop() {
-  const { profile } = useProfile()
+  const { user } = useAuth()
+  const { profile, refresh } = useProfile()
+  const balance = profile?.balance ?? 0
+  const [busy, setBusy] = useState<string | null>(null)
+  const [toast, setToast] = useState<string | null>(null)
+
+  async function buy(name: string, cost: number) {
+    if (!user || balance < cost) return
+    setBusy(name)
+    try {
+      await supabase.from('wallet_logs').insert({ user_id: user.id, amount: -cost, type: 'purchase', note: name })
+      await refresh()
+      setToast(`Enjoy your ${name}!`)
+      setTimeout(() => setToast(null), 2500)
+    } finally {
+      setBusy(null)
+    }
+  }
 
   return (
-    <div className="animate-fade-up">
-      <header className="mb-6">
-        <Label>Rewards</Label>
-        <h1 className="mt-1 text-2xl font-bold tracking-tight text-zinc-900">Shop</h1>
+    <Container className="animate-fade-up">
+      <header className="mb-4 flex items-end justify-between gap-3">
+        <div>
+          <Label>Rewards</Label>
+          <h1 className="font-pixel mt-1 text-2xl font-bold text-[color:var(--color-ink)]">Shop</h1>
+        </div>
+        <div className="sm:w-44">
+          <StatCard
+            emoji={<Coin className="h-6 w-6" />}
+            label="Balance"
+            tile="#fff1c9"
+            value={money(balance)}
+            valueClass={balance < 0 ? 'text-[color:var(--color-berry)]' : 'text-[color:var(--color-ink)]'}
+          />
+        </div>
       </header>
 
-      <div className="grid grid-cols-2 gap-4 sm:max-w-md">
-        <StatCard icon={Wallet} label="Balance" value={money(profile?.balance ?? 0)} />
-        <StatCard icon={Ticket} label="Vouchers" value={String(profile?.vouchers ?? 0)} />
+      <img src="/assets/shop-sign.png" alt="Shop" className="mx-auto mb-4 max-h-28 w-auto object-contain" draggable={false} />
+
+      <p className="mb-3 text-center text-sm text-[color:var(--color-muted)]">Spend your hard-earned coins — guilt-free.</p>
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+        {ITEMS.map((item) => {
+          const afford = balance >= item.cost
+          return (
+            <div key={item.name} className="px-panel flex flex-col items-center p-4 text-center">
+              <img src={item.img} alt={item.name} className="h-20 w-20 object-contain" draggable={false} />
+              <p className="font-pixel mt-2 text-sm font-bold text-[color:var(--color-ink)]">{item.name}</p>
+              <span className="px-coin mt-1">
+                <Coin /> {item.cost}
+              </span>
+              <button
+                onClick={() => buy(item.name, item.cost)}
+                disabled={!afford || busy === item.name}
+                className="px-btn mt-3 w-full text-xs"
+              >
+                {busy === item.name ? '…' : afford ? 'Buy' : 'Too pricey'}
+              </button>
+            </div>
+          )
+        })}
       </div>
 
-      <div className="mb-3 mt-6 flex items-center gap-1.5 text-xs font-medium text-violet-700">
-        <Sparkles size={13} /> Preview — redeeming goes live soon
-      </div>
-
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-        {SAMPLE_ITEMS.map((item) => (
-          <Card key={item.name} className="flex flex-col">
-            <div className="text-3xl">{item.emoji}</div>
-            <p className="mt-3 text-sm font-semibold text-zinc-900">{item.name}</p>
-            <p className="mt-0.5 text-xs text-zinc-500">
-              {item.kind === 'voucher' ? `${item.cost} voucher` : money(item.cost)}
-            </p>
-            <button
-              disabled
-              className="mt-4 rounded-lg bg-zinc-100 py-2 text-xs font-semibold text-zinc-400"
-            >
-              Redeem soon
-            </button>
-          </Card>
-        ))}
-      </div>
-    </div>
+      {toast && (
+        <div className="animate-fade-up font-pixel fixed bottom-24 left-1/2 z-50 -translate-x-1/2 rounded-full border-2 border-[#6b4a24] bg-[#fff5dd] px-5 py-2.5 text-sm font-bold text-[color:var(--color-ink)] shadow-xl md:bottom-8">
+          {toast}
+        </div>
+      )}
+    </Container>
   )
 }
