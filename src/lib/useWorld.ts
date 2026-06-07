@@ -144,7 +144,7 @@ export function useWorld(meta: Meta) {
   // my own card reflects my latest state immediately (no presence round-trip lag)
   const renderedPeers = peers.map((p) =>
     p.isMe
-      ? { ...p, x: pos.x, y: pos.y, balance: meta.balance, doneCount: meta.doneCount, total: meta.total, character: meta.character, activity: meta.activity ?? '' }
+      ? { ...p, x: pos.x, y: pos.y, username: meta.username, balance: meta.balance, doneCount: meta.doneCount, total: meta.total, character: meta.character, activity: meta.activity ?? '' }
       : p,
   )
 
