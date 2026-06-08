@@ -7,7 +7,7 @@ type Mode = 'signin' | 'signup'
 
 export default function Login() {
   const { signIn, signUp } = useAuth()
-  const { t, lang, toggle } = useLang()
+  const { t, lang, setLang } = useLang()
   const [mode, setMode] = useState<Mode>('signin')
   const [email, setEmail] = useState('')
   const [username, setUsername] = useState('')
@@ -47,9 +47,20 @@ export default function Login() {
           <img src="/assets/logo.png" alt="" className="mx-auto mb-2 h-14 w-14 object-contain" />
           <h1 className="font-pixel text-2xl font-bold text-[color:var(--color-ink)]">DidIt · 做了么</h1>
           <p className="mt-1 text-sm text-[color:var(--color-muted)]">{t('auth.tagline')}</p>
-          <button onClick={toggle} className="font-pixel mt-2 rounded-lg border-2 border-[#6b4a24] bg-[#fff5dd] px-3 py-1 text-xs font-bold text-[color:var(--color-ink)] shadow-[0_2px_0_#3a2614]">
-            {lang === 'en' ? '切换中文' : 'English'}
-          </button>
+          <div className="font-pixel mt-2 inline-flex items-center overflow-hidden rounded-lg border-2 border-[#6b4a24] bg-[#fff5dd] text-xs font-bold shadow-[0_2px_0_#3a2614]" title="语言 / Language">
+            <button
+              onClick={() => setLang('zh')}
+              className={`px-3 py-1 transition-colors ${lang === 'zh' ? 'bg-[#6aa84f] text-white' : 'text-[color:var(--color-muted)]'}`}
+            >
+              中文
+            </button>
+            <button
+              onClick={() => setLang('en')}
+              className={`border-l-2 border-[#6b4a24] px-3 py-1 transition-colors ${lang === 'en' ? 'bg-[#6aa84f] text-white' : 'text-[color:var(--color-muted)]'}`}
+            >
+              EN
+            </button>
+          </div>
         </div>
 
         <div className="px-panel p-6">

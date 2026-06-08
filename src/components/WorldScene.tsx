@@ -21,7 +21,7 @@ const EMOTES = ['emote-wave', 'icon-party', 'emote-heart', 'flame', 'emote-muscl
 
 export default function WorldScene({ name, balance, doneCount, total }: Props) {
   const { profile } = useProfile()
-  const { t, lang, toggle } = useLang()
+  const { t, lang, setLang } = useLang()
   const character = profile?.avatar_url || DEFAULT_CHARACTER
   const [activity, setActivity] = useState<string | null>(null)
   const { peers, poke, say, emote, moveTo, incoming, messages, emotes } = useWorld({
@@ -89,13 +89,23 @@ export default function WorldScene({ name, balance, doneCount, total }: Props) {
       >
         <img src={`/assets/icon-sound-${soundOn ? 'on' : 'off'}.png`} alt="" className="h-5 w-5 object-contain" />
       </button>
-      <button
-        onClick={toggle}
-        className="font-pixel absolute left-[3.4rem] top-12 flex h-9 items-center justify-center rounded-full border-2 border-[#6b4a24] bg-[#fff5dd]/95 px-2.5 text-xs font-bold text-[color:var(--color-ink)] shadow"
-        title="Language"
+      <div
+        className="font-pixel absolute left-[3.4rem] top-12 flex h-9 items-center overflow-hidden rounded-full border-2 border-[#6b4a24] bg-[#fff5dd]/95 text-xs font-bold shadow"
+        title="语言 / Language"
       >
-        {lang === 'en' ? '中' : 'EN'}
-      </button>
+        <button
+          onClick={() => setLang('zh')}
+          className={`h-full px-2 transition-colors ${lang === 'zh' ? 'bg-[#6aa84f] text-white' : 'text-[color:var(--color-muted)] hover:text-[color:var(--color-ink)]'}`}
+        >
+          中文
+        </button>
+        <button
+          onClick={() => setLang('en')}
+          className={`h-full border-l-2 border-[#6b4a24] px-2 transition-colors ${lang === 'en' ? 'bg-[#6aa84f] text-white' : 'text-[color:var(--color-muted)] hover:text-[color:var(--color-ink)]'}`}
+        >
+          EN
+        </button>
+      </div>
 
       {/* balance plaque */}
       <div className="absolute right-3 top-3 flex items-center gap-2.5 rounded-2xl border-[3px] border-[#6b4a24] bg-[#fff5dd]/95 px-3.5 py-2 shadow-[0_4px_0_#3a2614]">
