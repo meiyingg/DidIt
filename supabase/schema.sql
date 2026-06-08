@@ -58,7 +58,8 @@ create table public.fixed_tasks (
   name        text not null,
   reward      numeric(12, 2) not null default 50,
   sort_order  integer not null default 0,
-  created_at  timestamptz not null default now()
+  created_at  timestamptz not null default now(),
+  unique (user_id, name)                            -- no duplicate dailies per user
 );
 create index fixed_tasks_user_idx on public.fixed_tasks (user_id);
 
@@ -76,6 +77,8 @@ create table public.tasks (
   created_at      timestamptz not null default now()
 );
 create index tasks_user_date_idx on public.tasks (user_id, task_date);
+-- one materialised copy of a given required task per day (makes ensure_today_tasks race-proof)
+create unique index tasks_required_uidx on public.tasks (user_id, task_date, source_fixed_id) where source_fixed_id is not null;
 
 -- ---- wallet_logs (the ledger; source of truth for balance) -----------------
 create table public.wallet_logs (
@@ -191,7 +194,8 @@ begin
     and not exists (
       select 1 from public.tasks t
       where t.user_id = v_uid and t.task_date = current_date and t.source_fixed_id = ft.id
-    );
+    )
+  on conflict do nothing;
 end $$;
 
 -- ============================================================================

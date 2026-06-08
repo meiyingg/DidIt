@@ -6,26 +6,18 @@ import { CHARACTERS, DEFAULT_CHARACTER, charImg } from '../lib/characters'
 import { money } from '../lib/format'
 import { useLang } from '../lib/i18n'
 import Container from '../components/Container'
-import { Panel, StatCard } from '../components/ui'
+import { StatCard } from '../components/ui'
 import Icon from '../components/Icon'
 import Coin from '../components/Coin'
+import WalletLedger from '../components/WalletLedger'
+import EditProfileModal from '../components/EditProfileModal'
 
 export default function Profile() {
   const { user, signOut } = useAuth()
-  const { profile, refresh } = useProfile()
+  const { profile } = useProfile()
   const { t } = useLang()
-  const [name, setName] = useState('')
-  const [bio, setBio] = useState('')
-  const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
+  const [editing, setEditing] = useState(false)
   const [stats, setStats] = useState({ tasksDone: 0, studyMin: 0, sessions: 0 })
-
-  useEffect(() => {
-    if (profile) {
-      setName(profile.username)
-      setBio(profile.bio ?? '')
-    }
-  }, [profile])
 
   useEffect(() => {
     if (!user) return
@@ -45,32 +37,23 @@ export default function Profile() {
 
   const current = profile?.avatar_url || DEFAULT_CHARACTER
   const charName = CHARACTERS.find((c) => c.key === current)?.name ?? '—'
-  const dirty = name.trim() !== (profile?.username ?? '') || bio !== (profile?.bio ?? '')
-
-  async function save() {
-    if (!user || !name.trim()) return
-    setSaving(true)
-    try {
-      await supabase.from('profiles').update({ username: name.trim(), bio }).eq('id', user.id)
-      await refresh()
-      setSaved(true)
-      setTimeout(() => setSaved(false), 2000)
-    } finally {
-      setSaving(false)
-    }
-  }
 
   return (
     <Container className="animate-fade-up space-y-4">
-      <header className="flex items-center justify-between">
+      <header className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="font-pixel text-2xl font-bold text-[color:var(--color-ink)]">{t('profile.title')}</h1>
-        <button onClick={signOut} className="px-btn px-btn-amber text-sm">
-          {t('common.signout')}
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={() => setEditing(true)} className="px-btn flex items-center gap-1.5 text-sm">
+            <Icon src="icon-edit" className="h-4 w-4" /> {t('profile.editProfile')}
+          </button>
+          <button onClick={signOut} className="px-btn px-btn-amber text-sm">
+            {t('common.signout')}
+          </button>
+        </div>
       </header>
 
       {/* hero */}
-      <div className="px-panel flex items-center gap-4 p-5">
+      <div className="px-panel flex items-start gap-4 p-5">
         <div className="relative h-24 w-24 shrink-0">
           <img
             src={charImg(current)}
@@ -89,7 +72,15 @@ export default function Profile() {
               {money(profile?.balance ?? 0).replace('¥', '')}
             </span>
           </p>
-          {profile?.bio && <p className="mt-1.5 line-clamp-2 text-sm italic text-[color:var(--color-muted)]">“{profile.bio}”</p>}
+          {/* bio — always shown (placeholder when empty) */}
+          <div className="mt-2 rounded-lg border-2 border-[#eaddbc] bg-[#fffdf5] px-3 py-2">
+            <p className="font-pixel mb-0.5 text-[10px] font-bold uppercase tracking-wide text-[color:var(--color-faint)]">{t('profile.about')}</p>
+            {profile?.bio ? (
+              <p className="text-sm italic text-[color:var(--color-ink)]">“{profile.bio}”</p>
+            ) : (
+              <p className="text-sm text-[color:var(--color-faint)]">{t('profile.noBio')}</p>
+            )}
+          </div>
         </div>
       </div>
 
@@ -100,30 +91,17 @@ export default function Profile() {
         <StatCard emoji={<Icon src="icon-study" className="h-6 w-6" />} label={t('profile.sessions')} tile="#fff1c9" value={stats.sessions} />
       </div>
 
-      {/* edit */}
-      <Panel title={t('profile.editProfile')} icon={<Icon src="icon-edit" />} color="blue">
-        <label className="font-pixel mb-1 block text-xs font-bold uppercase text-[color:var(--color-muted)]">{t('common.displayName')}</label>
-        <input value={name} onChange={(e) => setName(e.target.value)} className="px-input mb-3 w-full text-sm" placeholder={t('profile.namePlaceholder')} />
-
-        <label className="font-pixel mb-1 block text-xs font-bold uppercase text-[color:var(--color-muted)]">{t('profile.bio')}</label>
-        <textarea
-          value={bio}
-          onChange={(e) => setBio(e.target.value)}
-          rows={3}
-          maxLength={200}
-          placeholder={t('profile.bioPlaceholder')}
-          className="mb-3 w-full rounded-lg border-2 border-[#c9a772] bg-[#fffdf5] px-3 py-2 text-sm text-[color:var(--color-ink)] outline-none focus:border-[#4a90d9]"
-        />
-
-        <div className="flex items-center gap-3">
-          <button onClick={save} disabled={saving || !name.trim() || !dirty} className="px-btn text-sm">
-            {saving ? t('common.saving') : t('common.save')}
-          </button>
-          {saved && <span className="font-pixel text-sm text-[color:var(--color-grass-dark)]">{t('profile.saved')}</span>}
-        </div>
-      </Panel>
+      {/* money detail */}
+      <div className="pt-1">
+        <h2 className="font-pixel mb-3 flex items-center gap-2 text-base font-bold text-[color:var(--color-ink)]">
+          <Coin className="h-5 w-5" /> {t('wallet.title')}
+        </h2>
+        <WalletLedger showBalance={false} limit={100} />
+      </div>
 
       <p className="text-center text-xs text-[color:var(--color-faint)]">{t('profile.charLocked')}</p>
+
+      {editing && <EditProfileModal onClose={() => setEditing(false)} />}
     </Container>
   )
 }

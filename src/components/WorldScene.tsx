@@ -14,12 +14,13 @@ interface Props {
   balance: number
   doneCount: number
   total: number
+  streak: number
 }
 
 // each value is the /assets png filename used both as the button icon and the floating emote
 const EMOTES = ['emote-wave', 'icon-party', 'emote-heart', 'flame', 'emote-muscle', 'emote-sleep', 'emote-thumbsup', 'emote-laugh']
 
-export default function WorldScene({ name, balance, doneCount, total }: Props) {
+export default function WorldScene({ name, balance, doneCount, total, streak }: Props) {
   const { profile } = useProfile()
   const { t, lang, setLang } = useLang()
   const character = profile?.avatar_url || DEFAULT_CHARACTER
@@ -31,6 +32,9 @@ export default function WorldScene({ name, balance, doneCount, total }: Props) {
     balance,
     character,
     activity: activity ?? undefined,
+    bio: profile?.bio ?? '',
+    studyMinutes: profile?.study_minutes ?? 0,
+    streak,
   })
   const [toast, setToast] = useState<string | null>(null)
   const [timerOpen, setTimerOpen] = useState(false)

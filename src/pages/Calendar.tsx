@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { supabase } from '../lib/supabase'
 import { priceTask } from '../lib/pricing'
 import { useAuth } from '../contexts/AuthContext'
@@ -36,6 +37,8 @@ export default function Calendar() {
 
   const load = useCallback(async () => {
     if (!user) return
+    // materialise today's required tasks from the template before reading the month
+    await supabase.rpc('ensure_today_tasks')
     const from = dateStr(year, month, 1)
     const to = dateStr(year, month, new Date(year, month + 1, 0).getDate())
     const [tRes, fRes] = await Promise.all([
@@ -80,16 +83,25 @@ export default function Calendar() {
   }
   async function addFixed(name: string) {
     if (!user) return
-    const reward = await priceTask(name)
+    const trimmed = name.trim()
+    // guard against duplicate dailies (which would materialise as two identical tasks)
+    if (fixedTasks.some((f) => f.name.trim().toLowerCase() === trimmed.toLowerCase())) {
+      setError(t('fixed.dup'))
+      return
+    }
+    const reward = await priceTask(trimmed)
     const { error: e } = await supabase
       .from('fixed_tasks')
-      .insert({ user_id: user.id, name, reward, sort_order: fixedTasks.length })
+      .insert({ user_id: user.id, name: trimmed, reward, sort_order: fixedTasks.length })
     if (e) return setError(e.message)
     await load()
   }
   async function removeFixed(id: string) {
+    if (!user) return
     const { error: e } = await supabase.from('fixed_tasks').delete().eq('id', id)
     if (e) return setError(e.message)
+    // also drop today's not-yet-done materialised copy so it leaves the calendar
+    await supabase.from('tasks').delete().eq('user_id', user.id).eq('source_fixed_id', id).eq('done', false)
     await load()
   }
 
@@ -170,23 +182,40 @@ export default function Calendar() {
                   )}
                 </div>
 
-                {info && (
+                {info ? (
                   <div className="mt-1 flex-1 space-y-0.5 overflow-y-auto pr-0.5">
-                    {info.tasks.map((t) => (
-                      <div key={t.id} className="flex items-start gap-1 leading-tight">
-                        <span className={`mt-px text-[9px] ${t.done ? 'text-[#4f8f2a]' : 'text-[color:var(--color-faint)]'}`}>
-                          {t.done ? '✓' : '•'}
+                    {info.tasks.map((task) => (
+                      <div key={task.id} className="flex items-start gap-1 leading-tight">
+                        <span
+                          className={`mt-px text-[9px] ${
+                            task.done ? 'text-[#4f8f2a]' : task.type === 'required' ? 'text-[#e0a23c]' : 'text-[color:var(--color-faint)]'
+                          }`}
+                        >
+                          {task.done ? '✓' : task.type === 'required' ? '◆' : '•'}
                         </span>
                         <span
                           className={`truncate text-[10px] ${
-                            t.done ? 'text-[color:var(--color-faint)] line-through' : 'text-[color:var(--color-ink)]'
+                            task.done ? 'text-[color:var(--color-faint)] line-through' : 'text-[color:var(--color-ink)]'
                           }`}
                         >
-                          {t.name}
+                          {task.name}
                         </span>
                       </div>
                     ))}
                   </div>
+                ) : (
+                  // upcoming days: preview the recurring required tasks (not yet materialised)
+                  d >= todayN &&
+                  fixedTasks.length > 0 && (
+                    <div className="mt-1 flex-1 space-y-0.5 overflow-y-auto pr-0.5 opacity-70">
+                      {fixedTasks.map((ft) => (
+                        <div key={ft.id} className="flex items-start gap-1 leading-tight">
+                          <span className="mt-px text-[9px] text-[#e0a23c]">◇</span>
+                          <span className="truncate text-[10px] italic text-[color:var(--color-muted)]">{ft.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )
                 )}
               </div>
             )
@@ -195,9 +224,9 @@ export default function Calendar() {
       </div>
 
       {/* day detail modal */}
-      {selected && (
+      {selected && createPortal(
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 backdrop-blur-md sm:items-center sm:p-4"
+          className="fixed inset-0 z-[100] flex items-end justify-center bg-black/40 p-0 backdrop-blur-md sm:items-center sm:p-4"
           onClick={() => setSelected(null)}
         >
           <div
@@ -232,7 +261,8 @@ export default function Calendar() {
               <DiaryEditor date={selected} />
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
 
       {showFixed && (

@@ -4,14 +4,12 @@ import { useAuth } from '../contexts/AuthContext'
 import { useProfile } from '../contexts/ProfileContext'
 import { money } from '../lib/format'
 import { useLang } from '../lib/i18n'
-import { Label, StatCard } from '../components/ui'
 import Container from '../components/Container'
-import Coin from '../components/Coin'
 
 const ITEMS = [
-  { img: '/assets/shop-game.png', nameKey: 'shop.game', cost: 200 },
-  { img: '/assets/shop-meal.png', nameKey: 'shop.meal', cost: 200 },
-  { img: '/assets/shop-sleep.png', nameKey: 'shop.sleep', cost: 200 },
+  { img: '/assets/shop-game.png', nameKey: 'shop.game', descKey: 'shop.game.desc', cost: 200 },
+  { img: '/assets/shop-meal.png', nameKey: 'shop.meal', descKey: 'shop.meal.desc', cost: 200 },
+  { img: '/assets/shop-sleep.png', nameKey: 'shop.sleep', descKey: 'shop.sleep.desc', cost: 200 },
 ]
 
 export default function Shop() {
@@ -37,43 +35,78 @@ export default function Shop() {
 
   return (
     <Container className="animate-fade-up">
-      <header className="mb-4 flex items-end justify-between gap-3">
-        <div>
-          <Label>{t('shop.rewards')}</Label>
-          <h1 className="font-pixel mt-1 text-2xl font-bold text-[color:var(--color-ink)]">{t('shop.title')}</h1>
+      <h1 className="sr-only">{t('shop.title')}</h1>
+
+      {/* storefront hero: hanging sign + shopkeeper greeting */}
+      <div className="mb-5 flex flex-col items-center">
+        <img
+          src="/assets/shop-sign.png"
+          alt={t('shop.title')}
+          className="max-h-28 w-auto object-contain drop-shadow-[0_6px_8px_rgba(0,0,0,0.3)]"
+          draggable={false}
+        />
+        <div className="relative mt-4 max-w-xs rounded-2xl border-2 border-[#6b4a24] bg-white px-4 py-2 text-center shadow-[0_3px_0_rgba(107,74,36,0.35)]">
+          <span className="absolute -top-1.5 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 border-l-2 border-t-2 border-[#6b4a24] bg-white" />
+          <span className="font-pixel text-xs font-bold text-[color:var(--color-ink)]">{t('shop.greeting')}</span>
         </div>
-        <div className="sm:w-44">
-          <StatCard
-            emoji={<Coin className="h-6 w-6" />}
-            label={t('common.balance')}
-            tile="#fff1c9"
-            value={money(balance)}
-            valueClass={balance < 0 ? 'text-[color:var(--color-berry)]' : 'text-[color:var(--color-ink)]'}
-          />
+      </div>
+
+      {/* coin purse */}
+      <div className="mb-7 flex justify-center">
+        <div className="inline-flex items-center gap-2.5 rounded-2xl border-[3px] border-[#6b4a24] bg-[#fff5dd] px-4 py-2 shadow-[0_4px_0_#3a2614]">
+          <img src="/assets/coin.png" alt="" className="h-9 w-9 object-contain" draggable={false} />
+          <div className="text-left">
+            <p className="font-pixel text-[10px] font-bold uppercase tracking-wide text-[color:var(--color-muted)]">{t('common.balance')}</p>
+            <p className={`font-pixel text-2xl font-bold leading-none ${balance < 0 ? 'text-[color:var(--color-berry)]' : 'text-[color:var(--color-grass-dark)]'}`}>
+              {money(balance)}
+            </p>
+          </div>
         </div>
-      </header>
+      </div>
 
-      <img src="/assets/shop-sign.png" alt="Shop" className="mx-auto mb-4 max-h-28 w-auto object-contain" draggable={false} />
-
-      <p className="mb-3 text-center text-sm text-[color:var(--color-muted)]">{t('shop.spend')}</p>
-
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-        {ITEMS.map((item) => {
+      {/* shelves */}
+      <div className="mx-auto grid max-w-3xl grid-cols-1 gap-4 sm:grid-cols-3">
+        {ITEMS.map((item, i) => {
           const afford = balance >= item.cost
           const name = t(item.nameKey)
           return (
-            <div key={item.nameKey} className="px-panel flex flex-col items-center p-4 text-center">
-              <img src={item.img} alt={name} className="h-20 w-20 object-contain" draggable={false} />
-              <p className="font-pixel mt-2 text-sm font-bold text-[color:var(--color-ink)]">{name}</p>
-              <span className="px-coin mt-1">
-                <Coin /> {item.cost}
+            <div
+              key={item.nameKey}
+              className="px-panel group flex flex-col items-center gap-3 p-5 text-center transition-transform duration-200 hover:-translate-y-1"
+            >
+              {/* spotlight tile with floating art */}
+              <div
+                className="flex h-28 w-28 items-center justify-center rounded-2xl border-2 border-[#e7c067] shadow-[inset_0_2px_8px_rgba(0,0,0,0.12)]"
+                style={{ background: 'radial-gradient(circle at 50% 35%, #fffaf0, #ffe6ad)' }}
+              >
+                <img
+                  src={item.img}
+                  alt={name}
+                  draggable={false}
+                  style={{ animationDelay: `${i * 0.4}s` }}
+                  className={`animate-float h-20 w-20 object-contain drop-shadow-[0_6px_6px_rgba(0,0,0,0.25)] ${afford ? '' : 'opacity-60 grayscale-[0.4]'}`}
+                />
+              </div>
+
+              {/* name + flavor */}
+              <div>
+                <p className="font-pixel text-base font-bold text-[color:var(--color-ink)]">{name}</p>
+                <p className="mt-0.5 text-xs text-[color:var(--color-muted)]">{t(item.descKey)}</p>
+              </div>
+
+              {/* wooden price tag */}
+              <span className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#e7c067] bg-[#fff1c9] px-3 py-1 shadow-[0_2px_0_#cda23f]">
+                <img src="/assets/coin.png" alt="" className="h-4 w-4 object-contain" draggable={false} />
+                <span className="font-pixel text-base font-bold text-[#9a6a0c]">{item.cost}</span>
               </span>
+
+              {/* buy / locked */}
               <button
                 onClick={() => buy(name, item.cost)}
                 disabled={!afford || busy === name}
-                className="px-btn mt-3 w-full text-xs"
+                className="px-btn mt-1 w-full text-sm"
               >
-                {busy === name ? '…' : afford ? t('shop.buy') : t('shop.tooPricey')}
+                {busy === name ? '…' : afford ? t('shop.buy') : t('shop.needMore', { amount: Math.ceil(item.cost - balance) })}
               </button>
             </div>
           )
@@ -81,7 +114,8 @@ export default function Shop() {
       </div>
 
       {toast && (
-        <div className="animate-fade-up font-pixel fixed bottom-24 left-1/2 z-50 -translate-x-1/2 rounded-full border-2 border-[#6b4a24] bg-[#fff5dd] px-5 py-2.5 text-sm font-bold text-[color:var(--color-ink)] shadow-xl md:bottom-8">
+        <div className="animate-fade-up font-pixel fixed bottom-24 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-full border-2 border-[#6b4a24] bg-[#fff5dd] px-5 py-2.5 text-sm font-bold text-[color:var(--color-ink)] shadow-xl md:bottom-8">
+          <img src="/assets/icon-party.png" alt="" className="h-5 w-5 object-contain" />
           {toast}
         </div>
       )}

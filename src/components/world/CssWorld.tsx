@@ -1,6 +1,6 @@
 import { useEffect, useRef, type MouseEvent } from 'react'
-import type { FloatingEmote, Peer } from '../../lib/useWorld'
-import { charImg } from '../../lib/characters'
+import type { ChatBubble, FloatingEmote, Peer } from '../../lib/useWorld'
+import { CHARACTERS, charImg } from '../../lib/characters'
 import { useLang } from '../../lib/i18n'
 
 const CHAR_H = 104
@@ -19,7 +19,7 @@ function statusChip(p: Peer): { icon: string; label: string } {
 
 interface Props {
   peers: Peer[]
-  messages: Record<string, string>
+  messages: Record<string, ChatBubble[]>
   emotes: FloatingEmote[]
   muted: boolean
   onPoke: (p: Peer) => void
@@ -64,8 +64,19 @@ export default function CssWorld({ peers, messages, emotes, muted, onPoke, onSel
 
       {peers.map((peer) => {
         const st = statusChip(peer)
-        const msg = messages[peer.id]
+        const myMessages = messages[peer.id] ?? []
         const myEmotes = emotes.filter((e) => e.peerId === peer.id)
+        const charLabel = CHARACTERS.find((c) => c.key === peer.character)?.name ?? peer.character
+        const studyH = Math.floor(peer.studyMinutes / 60)
+        const studyM = peer.studyMinutes % 60
+        // nameplate colour reflects status: studying / all-done / in-progress / idle
+        const headerBg = peer.activity
+          ? '#4a90d9'
+          : peer.total > 0 && peer.doneCount >= peer.total
+            ? '#6aa84f'
+            : peer.doneCount > 0
+              ? '#e0a23c'
+              : '#8a7a58'
         return (
           <button
             key={peer.id}
@@ -87,33 +98,75 @@ export default function CssWorld({ peers, messages, emotes, muted, onPoke, onSel
               />
             ))}
 
-            {/* one bubble: chat message replaces the status card while talking */}
-            {msg ? (
-              <div className="animate-fade-up mx-auto mb-1 max-w-[160px] rounded-2xl rounded-bl-sm border-2 border-[#6b4a24] bg-white px-2.5 py-1 text-center text-xs font-medium text-[color:var(--color-ink)] shadow-lg">
-                {msg}
-              </div>
-            ) : (
-              <div className="mx-auto mb-1 w-fit min-w-[88px] rounded-xl border-2 border-[#6b4a24] bg-[#fff5dd]/95 px-2 py-0.5 text-center shadow-md">
-                <div className="flex items-center justify-center gap-1">
-                  <img src={`/assets/${st.icon}.png`} alt="" className="h-3.5 w-3.5 shrink-0 object-contain" />
-                  <span className="font-pixel max-w-[110px] truncate text-xs font-bold text-[color:var(--color-ink)]">{peer.username}</span>
-                </div>
-                <div className="mt-0.5 flex items-center justify-center gap-2 text-[10px]">
-                  <span className="flex items-center gap-0.5">
-                    <img src="/assets/coin.png" alt="" className="h-3 w-3 object-contain" />
-                    <span className={`font-pixel font-bold ${peer.balance < 0 ? 'text-[color:var(--color-berry)]' : 'text-[color:var(--color-ink)]'}`}>
-                      {Math.round(peer.balance)}
-                    </span>
-                  </span>
-                  <span className="flex items-center gap-0.5">
-                    <img src="/assets/icon-tasks.png" alt="" className="h-3 w-3 object-contain" />
-                    <span className="font-pixel font-bold text-[color:var(--color-grass-dark)]">
-                      {peer.doneCount}/{peer.total}
-                    </span>
-                  </span>
-                </div>
+            {/* chat bubbles — stack upward, newest nearest the head */}
+            {myMessages.length > 0 && (
+              <div className="mb-1 flex flex-col items-center gap-1">
+                {myMessages.map((b) => (
+                  <div
+                    key={b.id}
+                    className="animate-fade-up max-w-[180px] break-words rounded-2xl rounded-bl-sm border-2 border-[#6b4a24] bg-white px-2.5 py-1 text-center text-xs font-medium text-[color:var(--color-ink)] shadow-lg"
+                  >
+                    {b.text}
+                  </div>
+                ))}
               </div>
             )}
+
+            {/* status nameplate (always shown) */}
+            <div className="mx-auto mb-1 w-fit min-w-[120px] max-w-[16rem] overflow-hidden rounded-xl border-2 border-[#6b4a24] bg-[#fff5dd] text-center shadow-[0_3px_0_#6b4a24]">
+                {/* nameplate header — colour reflects status */}
+                <div className="flex items-center justify-center gap-1.5 px-2.5 py-1" style={{ background: headerBg }}>
+                  <img src={`/assets/${st.icon}.png`} alt="" className="h-3.5 w-3.5 shrink-0 object-contain" />
+                  <span className="font-pixel max-w-[140px] truncate text-xs font-bold text-white drop-shadow-[0_1px_0_rgba(0,0,0,0.3)]">
+                    {peer.username}
+                  </span>
+                </div>
+
+                <div className="px-2.5 py-1.5">
+                  {/* key stats: coins · today's tasks · streak */}
+                  <div className="flex items-center justify-center gap-2.5 text-[10px]">
+                    <span className="flex items-center gap-0.5" title="balance">
+                      <img src="/assets/coin.png" alt="" className="h-3 w-3 object-contain" />
+                      <span className={`font-pixel font-bold ${peer.balance < 0 ? 'text-[color:var(--color-berry)]' : 'text-[color:var(--color-ink)]'}`}>
+                        {Math.round(peer.balance)}
+                      </span>
+                    </span>
+                    <span className="flex items-center gap-0.5" title="today's tasks">
+                      <img src="/assets/icon-tasks.png" alt="" className="h-3 w-3 object-contain" />
+                      <span className="font-pixel font-bold text-[color:var(--color-grass-dark)]">
+                        {peer.doneCount}/{peer.total}
+                      </span>
+                    </span>
+                    <span className="flex items-center gap-0.5" title="streak">
+                      <img src="/assets/flame.png" alt="" className="h-3 w-3 object-contain" />
+                      <span className="font-pixel font-bold text-[#c2410c]">{peer.streak}</span>
+                    </span>
+                  </div>
+
+                  {/* revealed on hover: class · bio · study time · current activity */}
+                  <div className="max-h-0 overflow-hidden opacity-0 transition-all duration-200 group-hover:max-h-44 group-hover:opacity-100">
+                    <div className="mt-1.5 space-y-1 border-t-2 border-[#eaddbc] pt-1.5">
+                      <p className="font-pixel text-[9px] font-bold uppercase tracking-wide text-[color:var(--color-faint)]">{charLabel}</p>
+                      {peer.bio && (
+                        <p className="line-clamp-3 text-[10px] italic leading-snug text-[color:var(--color-muted)]">“{peer.bio}”</p>
+                      )}
+                      <div className="flex items-center justify-center gap-1 text-[10px]">
+                        <img src="/assets/icon-timer.png" alt="" className="h-3 w-3 object-contain" />
+                        <span className="font-pixel font-bold text-[#4a90d9]">
+                          {studyH}h {studyM}m
+                        </span>
+                        <span className="text-[color:var(--color-faint)]">{t('profile.studyTime')}</span>
+                      </div>
+                      {peer.activity && (
+                        <div className="mx-auto flex w-fit items-center gap-1 rounded-md bg-[#eaf6e0] px-1.5 py-0.5">
+                          <img src="/assets/icon-book.png" alt="" className="h-3 w-3 object-contain" />
+                          <span className="max-w-[150px] truncate text-[9px] font-medium text-[color:var(--color-grass-dark)]">{peer.activity}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
 
             {/* character */}
             <div className="relative mx-auto" style={{ height: CHAR_H }}>

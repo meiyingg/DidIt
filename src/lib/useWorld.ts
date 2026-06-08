@@ -11,6 +11,9 @@ export interface Peer {
   balance: number
   character: string
   activity: string
+  bio: string
+  studyMinutes: number
+  streak: number
   x: number
   y: number
   isMe: boolean
@@ -27,6 +30,11 @@ export interface FloatingEmote {
   emoji: string
 }
 
+export interface ChatBubble {
+  id: number
+  text: string
+}
+
 interface Meta {
   username: string
   doneCount: number
@@ -34,6 +42,9 @@ interface Meta {
   balance: number
   character: string
   activity?: string
+  bio?: string
+  studyMinutes?: number
+  streak?: number
 }
 
 /**
@@ -44,22 +55,30 @@ export function useWorld(meta: Meta) {
   const { user } = useAuth()
   const [peers, setPeers] = useState<Peer[]>([])
   const [incoming, setIncoming] = useState<IncomingPoke | null>(null)
-  const [messages, setMessages] = useState<Record<string, string>>({})
+  const [messages, setMessages] = useState<Record<string, ChatBubble[]>>({})
   const [emotes, setEmotes] = useState<FloatingEmote[]>([])
   const [pos, setPos] = useState(() => ({ x: 35 + Math.random() * 30, y: 64 + Math.random() * 20 }))
   const channelRef = useRef<RealtimeChannel | null>(null)
   const emoteId = useRef(0)
+  const msgId = useRef(0)
 
+  // bubbles stack per peer (newest last); each removes itself after a few seconds
   function showMessage(peerId: string, text: string) {
-    setMessages((m) => ({ ...m, [peerId]: text }))
+    const id = ++msgId.current
+    setMessages((m) => ({ ...m, [peerId]: [...(m[peerId] ?? []), { id, text }].slice(-5) }))
     setTimeout(() => {
       setMessages((m) => {
-        if (m[peerId] !== text) return m
-        const next = { ...m }
-        delete next[peerId]
-        return next
+        const list = m[peerId]
+        if (!list) return m
+        const next = list.filter((b) => b.id !== id)
+        if (next.length === 0) {
+          const copy = { ...m }
+          delete copy[peerId]
+          return copy
+        }
+        return { ...m, [peerId]: next }
       })
-    }, 6000)
+    }, 7000)
   }
 
   function spawnEmote(peerId: string, emoji: string) {
@@ -86,6 +105,9 @@ export function useWorld(meta: Meta) {
           balance: typeof m?.balance === 'number' ? m.balance : 0,
           character: m?.character ?? 'hoodie',
           activity: m?.activity ?? '',
+          bio: m?.bio ?? '',
+          studyMinutes: typeof m?.studyMinutes === 'number' ? m.studyMinutes : 0,
+          streak: typeof m?.streak === 'number' ? m.streak : 0,
           x: typeof m?.x === 'number' ? m.x : 50,
           y: typeof m?.y === 'number' ? m.y : 75,
           isMe: id === user.id,
@@ -120,7 +142,7 @@ export function useWorld(meta: Meta) {
   useEffect(() => {
     channelRef.current?.track({ ...meta, x: pos.x, y: pos.y })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [meta.username, meta.doneCount, meta.total, meta.balance, meta.character, meta.activity, pos.x, pos.y])
+  }, [meta.username, meta.doneCount, meta.total, meta.balance, meta.character, meta.activity, meta.bio, meta.studyMinutes, meta.streak, pos.x, pos.y])
 
   function poke(to: string) {
     if (!user) return
@@ -144,7 +166,20 @@ export function useWorld(meta: Meta) {
   // my own card reflects my latest state immediately (no presence round-trip lag)
   const renderedPeers = peers.map((p) =>
     p.isMe
-      ? { ...p, x: pos.x, y: pos.y, username: meta.username, balance: meta.balance, doneCount: meta.doneCount, total: meta.total, character: meta.character, activity: meta.activity ?? '' }
+      ? {
+          ...p,
+          x: pos.x,
+          y: pos.y,
+          username: meta.username,
+          balance: meta.balance,
+          doneCount: meta.doneCount,
+          total: meta.total,
+          character: meta.character,
+          activity: meta.activity ?? '',
+          bio: meta.bio ?? '',
+          studyMinutes: meta.studyMinutes ?? 0,
+          streak: meta.streak ?? 0,
+        }
       : p,
   )
 
