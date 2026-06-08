@@ -8,6 +8,7 @@ import Container from '../components/Container'
 import { Label, Panel } from '../components/ui'
 import Icon from '../components/Icon'
 import Coin from '../components/Coin'
+import { useLang } from '../lib/i18n'
 
 type Metric = 'study' | 'wealth'
 
@@ -28,6 +29,7 @@ const avatar = (p: Profile) => charImg(p.avatar_url)
 
 export default function Ranking() {
   const { user } = useAuth()
+  const { t } = useLang()
   const [all, setAll] = useState<Profile[]>([])
   const [loading, setLoading] = useState(true)
   const [metric, setMetric] = useState<Metric>('study')
@@ -63,10 +65,10 @@ export default function Ranking() {
       {/* header + tabs inline */}
       <header className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <Label>Leaderboard</Label>
+          <Label>{t('rank.leaderboard')}</Label>
           <h1 className="font-pixel mt-1 flex items-center gap-2 text-2xl font-bold text-[color:var(--color-ink)]">
             {metric === 'study' ? <Icon src="icon-study" className="h-7 w-7" /> : <Coin className="h-7 w-7" />}
-            {metric === 'study' ? 'Study Champions' : 'Hall of Wealth'}
+            {metric === 'study' ? t('rank.studyChampions') : t('rank.hallWealth')}
           </h1>
         </div>
         <div className="inline-flex rounded-xl border-2 border-[#6b4a24] bg-[#fff5dd] p-1">
@@ -79,7 +81,7 @@ export default function Ranking() {
               }`}
             >
               {m === 'study' ? <Icon src="icon-timer" className="h-4 w-4" /> : <Coin className="h-4 w-4" />}
-              {m === 'study' ? 'Study time' : 'Wealth'}
+              {m === 'study' ? t('rank.studyTime') : t('rank.wealth')}
             </button>
           ))}
         </div>
@@ -137,7 +139,7 @@ export default function Ranking() {
           )}
 
           {/* ranking list */}
-          <Panel title={metric === 'study' ? 'Study time ranking' : 'Wealth ranking'} icon={<Icon src="icon-chart" />} color="amber">
+          <Panel title={metric === 'study' ? t('rank.studyRanking') : t('rank.wealthRanking')} icon={<Icon src="icon-chart" />} color="amber">
             <ul className="space-y-1.5">
               {rows.map((p, i) => {
                 const isMe = p.id === user?.id
@@ -160,7 +162,7 @@ export default function Ranking() {
                       <div className="mb-1 flex items-center justify-between gap-2">
                         <span className="font-pixel truncate text-sm font-bold text-[color:var(--color-ink)]">
                           {p.username}
-                          {isMe && <span className="ml-1.5 rounded-md bg-violet-200 px-1.5 py-0.5 text-[10px] font-bold text-violet-700">You</span>}
+                          {isMe && <span className="ml-1.5 rounded-md bg-violet-200 px-1.5 py-0.5 text-[10px] font-bold text-violet-700">{t('rank.you')}</span>}
                         </span>
                         <span className={`font-pixel shrink-0 text-sm font-bold ${metric === 'wealth' && p.balance < 0 ? 'text-[color:var(--color-berry)]' : 'text-[color:var(--color-ink)]'}`}>
                           {fmt(v)}

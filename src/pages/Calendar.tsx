@@ -11,14 +11,18 @@ import TaskItem from '../components/TaskItem'
 import AddTaskForm from '../components/AddTaskForm'
 import FixedTasksManager from '../components/FixedTasksManager'
 import DiaryEditor from '../components/DiaryEditor'
+import { useLang } from '../lib/i18n'
 
-const WD = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+const WD_EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+const WD_ZH = ['日', '一', '二', '三', '四', '五', '六']
 const pad = (n: number) => String(n).padStart(2, '0')
 const dateStr = (y: number, m: number, d: number) => `${y}-${pad(m + 1)}-${pad(d)}`
 
 export default function Calendar() {
   const { user } = useAuth()
   const { refresh: refreshProfile } = useProfile()
+  const { t, lang, locale } = useLang()
+  const WD = lang === 'zh' ? WD_ZH : WD_EN
   const now = new Date()
   const year = now.getFullYear()
   const month = now.getMonth()
@@ -102,13 +106,13 @@ export default function Calendar() {
     <Container className="animate-fade-up">
       <header className="mb-5 flex items-end justify-between">
         <div>
-          <Label>Data panel</Label>
+          <Label>{t('cal.dataPanel')}</Label>
           <h1 className="font-pixel mt-1 text-2xl font-bold text-[color:var(--color-ink)]">
-            {now.toLocaleString('en-US', { month: 'long' })} {year}
+            {now.toLocaleString(locale, { month: 'long' })} {year}
           </h1>
         </div>
         <button onClick={() => setShowFixed(true)} className="px-btn px-btn-amber flex items-center gap-1.5 text-sm">
-          <Icon src="icon-gear" className="h-4 w-4" /> Daily required
+          <Icon src="icon-gear" className="h-4 w-4" /> {t('cal.dailyRequired')}
         </button>
       </header>
 
@@ -119,9 +123,9 @@ export default function Calendar() {
       )}
 
       <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-        <StatCard emoji={<Icon src="icon-tasks" className="h-6 w-6" />} label="Done this month" tile="#dff3d2" value={monthDone} />
-        <StatCard emoji={<Icon src="icon-list" className="h-6 w-6" />} label="Total tasks" tile="#fff1c9" value={tasks.length} />
-        <StatCard emoji={<Icon src="icon-pending" className="h-6 w-6" />} label="Still pending" tile="#fde2cf" value={tasks.length - monthDone} />
+        <StatCard emoji={<Icon src="icon-tasks" className="h-6 w-6" />} label={t('cal.doneMonth')} tile="#dff3d2" value={monthDone} />
+        <StatCard emoji={<Icon src="icon-list" className="h-6 w-6" />} label={t('cal.totalTasks')} tile="#fff1c9" value={tasks.length} />
+        <StatCard emoji={<Icon src="icon-pending" className="h-6 w-6" />} label={t('cal.pending')} tile="#fde2cf" value={tasks.length - monthDone} />
       </div>
 
       {/* month grid */}
@@ -203,7 +207,7 @@ export default function Calendar() {
             <div className="px-header px-h-green">
               <Icon src="nav-calendar" className="h-5 w-5" />
               <h3 className="font-pixel flex-1 text-[15px] font-bold">
-                {new Date(selected + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+                {new Date(selected + 'T00:00:00').toLocaleDateString(locale, { weekday: 'long', month: 'short', day: 'numeric' })}
               </h3>
               <button onClick={() => setSelected(null)} className="font-pixel text-white/90 hover:text-white">
                 ✕
@@ -219,7 +223,7 @@ export default function Calendar() {
               ) : (
                 <div className="rounded-lg border-2 border-dashed border-[#d8b985] px-4 py-5 text-center">
                   <img src="/assets/empty-tasks.png" alt="" className="mx-auto h-20 w-20 object-contain opacity-90" />
-                  <p className="mt-1 text-sm text-[color:var(--color-muted)]">No to-dos for this day yet.</p>
+                  <p className="mt-1 text-sm text-[color:var(--color-muted)]">{t('cal.noTodos')}</p>
                 </div>
               )}
               <div className="border-t-2 border-[#eaddbc] pt-3">

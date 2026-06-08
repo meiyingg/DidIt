@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useProfile } from '../contexts/ProfileContext'
 import type { Task } from '../lib/types'
 import { money } from '../lib/format'
+import { useLang } from '../lib/i18n'
 import Coin from './Coin'
 
 function fmt(total: number): string {
@@ -30,6 +31,7 @@ interface Props {
 export default function StudyTimerModal({ onClose, onDone, onActivityChange }: Props) {
   const { user } = useAuth()
   const { refresh } = useProfile()
+  const { t } = useLang()
   const [todos, setTodos] = useState<Task[]>([])
   const [task, setTask] = useState('')
   const [selected, setSelected] = useState<Task | null>(null)
@@ -37,10 +39,50 @@ export default function StudyTimerModal({ onClose, onDone, onActivityChange }: P
   const [running, setRunning] = useState(false)
   const [saving, setSaving] = useState(false)
   const [earned, setEarned] = useState<number | null>(null)
-  const startedAt = useRef<string | null>(null)
-  const tick = useRef<number | null>(null)
+  const baseSec = useRef(0) // accumulated seconds while paused
+  const runningSince = useRef<number | null>(null) // epoch ms of the current run
+  const startIso = useRef<string | null>(null) // first start, for the DB record
+  const pendingSelectedId = useRef<string | null>(null)
 
-  // load unfinished to-dos (today + earlier) to choose from
+  // elapsed is DERIVED from timestamps → a throttled/backgrounded tab never loses time
+  function compute() {
+    return baseSec.current + (runningSince.current ? Math.floor((Date.now() - runningSince.current) / 1000) : 0)
+  }
+  function persist() {
+    localStorage.setItem(
+      'didit_timer',
+      JSON.stringify({
+        task,
+        baseSec: baseSec.current,
+        runningSince: runningSince.current,
+        startIso: startIso.current,
+        selectedId: selected?.id ?? null,
+      }),
+    )
+  }
+  function clearPersist() {
+    localStorage.removeItem('didit_timer')
+  }
+
+  // restore an in-progress session (survives leaving the page / closing the modal)
+  useEffect(() => {
+    const raw = localStorage.getItem('didit_timer')
+    if (!raw) return
+    try {
+      const s = JSON.parse(raw)
+      baseSec.current = Number(s.baseSec) || 0
+      runningSince.current = s.runningSince ?? null
+      startIso.current = s.startIso ?? null
+      pendingSelectedId.current = s.selectedId ?? null
+      if (s.task) setTask(s.task)
+      setRunning(runningSince.current != null)
+      setSec(compute())
+    } catch {
+      /* ignore corrupt state */
+    }
+  }, [])
+
+  // load unfinished to-dos (+ restore a persisted selection)
   useEffect(() => {
     if (!user) return
     supabase
@@ -50,16 +92,30 @@ export default function StudyTimerModal({ onClose, onDone, onActivityChange }: P
       .eq('done', false)
       .order('task_date', { ascending: false })
       .limit(30)
-      .then(({ data }) => setTodos(data ?? []))
+      .then(({ data }) => {
+        const list = data ?? []
+        setTodos(list)
+        if (pendingSelectedId.current) {
+          const found = list.find((x) => x.id === pendingSelectedId.current)
+          if (found) setSelected(found)
+        }
+      })
   }, [user])
 
+  // tick the DISPLAY only (value is derived from timestamps)
   useEffect(() => {
+    setSec(compute())
     if (!running) return
-    tick.current = window.setInterval(() => setSec((s) => s + 1), 1000)
-    return () => {
-      if (tick.current) window.clearInterval(tick.current)
-    }
+    const id = window.setInterval(() => setSec(compute()), 1000)
+    return () => window.clearInterval(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [running])
+
+  // keep the persisted task name fresh while a session is active
+  useEffect(() => {
+    if (runningSince.current != null || baseSec.current > 0) persist()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [task, selected])
 
   // broadcast a live "studying X" status to the room while the timer runs
   useEffect(() => {
@@ -73,14 +129,30 @@ export default function StudyTimerModal({ onClose, onDone, onActivityChange }: P
 
   function start() {
     if (!task.trim()) return
-    if (!startedAt.current) startedAt.current = new Date().toISOString()
+    if (!startIso.current) startIso.current = new Date().toISOString()
+    runningSince.current = Date.now()
     setRunning(true)
+    persist()
+  }
+  function pause() {
+    if (runningSince.current) baseSec.current += Math.floor((Date.now() - runningSince.current) / 1000)
+    runningSince.current = null
+    setRunning(false)
+    setSec(compute())
+    persist()
   }
 
   async function finish() {
+    if (runningSince.current) {
+      baseSec.current += Math.floor((Date.now() - runningSince.current) / 1000)
+      runningSince.current = null
+    }
     setRunning(false)
-    const minutes = Math.max(0, Math.round(sec / 60))
-    if (!user || !task.trim() || sec < 1) {
+    const total = compute()
+    setSec(total)
+    const minutes = Math.max(0, Math.round(total / 60))
+    if (!user || !task.trim() || total < 1) {
+      clearPersist()
       onClose()
       return
     }
@@ -88,7 +160,7 @@ export default function StudyTimerModal({ onClose, onDone, onActivityChange }: P
     try {
       // Balance and study_minutes are maintained by DB triggers — we only
       // insert the session (→ study_minutes) and the ledger row (→ balance).
-      const startedIso = startedAt.current ?? new Date().toISOString()
+      const startedIso = startIso.current ?? new Date().toISOString()
       let reward = 0
       if (selected) {
         // completing the selected to-do credits its reward via complete_task (no double pay)
@@ -123,6 +195,7 @@ export default function StudyTimerModal({ onClose, onDone, onActivityChange }: P
       }
       await refresh()
       setEarned(reward)
+      clearPersist()
       onDone()
     } finally {
       setSaving(false)
@@ -134,7 +207,7 @@ export default function StudyTimerModal({ onClose, onDone, onActivityChange }: P
       <div className="px-panel w-full max-w-sm overflow-hidden">
         <div className="px-header px-h-amber">
           <img src="/assets/icon-timer.png" alt="" className="h-5 w-5 object-contain" />
-          <h3 className="font-pixel flex-1 text-[15px] font-bold">Focus Timer</h3>
+          <h3 className="font-pixel flex-1 text-[15px] font-bold">{t('timer.title')}</h3>
           <button onClick={onClose} className="font-pixel text-white/90 hover:text-white">
             ✕
           </button>
@@ -144,13 +217,13 @@ export default function StudyTimerModal({ onClose, onDone, onActivityChange }: P
           {earned !== null ? (
             <div className="py-6 text-center">
               <img src="/assets/icon-party.png" alt="" className="mx-auto h-12 w-12 object-contain" />
-              <p className="font-pixel mt-3 text-lg font-bold text-[color:var(--color-ink)]">Nice work!</p>
-              <p className="mt-1 text-sm text-[color:var(--color-muted)]">You studied {fmt(sec)} and earned</p>
+              <p className="font-pixel mt-3 text-lg font-bold text-[color:var(--color-ink)]">{t('timer.niceWork')}</p>
+              <p className="mt-1 text-sm text-[color:var(--color-muted)]">{t('timer.studiedEarned', { time: fmt(sec) })}</p>
               <p className="font-pixel mt-1 flex items-center justify-center gap-1.5 text-2xl font-bold text-[color:var(--color-grass-dark)]">
                 <Coin className="h-6 w-6" /> {money(earned).replace('¥', '')}
               </p>
               <button onClick={onClose} className="px-btn mt-5 w-full">
-                Done
+                {t('common.gotit')}
               </button>
             </div>
           ) : (
@@ -158,7 +231,7 @@ export default function StudyTimerModal({ onClose, onDone, onActivityChange }: P
               {todos.length > 0 && (
                 <>
                   <label className="font-pixel mb-1.5 block text-xs font-bold uppercase text-[color:var(--color-muted)]">
-                    Pick a to-do
+                    {t('timer.pickTodo')}
                   </label>
                   <div className="mb-3 flex max-h-24 flex-wrap gap-1.5 overflow-y-auto">
                     {todos.map((t) => (
@@ -181,7 +254,7 @@ export default function StudyTimerModal({ onClose, onDone, onActivityChange }: P
               )}
 
               <label className="font-pixel mb-1 block text-xs font-bold uppercase text-[color:var(--color-muted)]">
-                {todos.length > 0 ? 'Or type a new one' : 'What are you working on?'}
+                {todos.length > 0 ? t('timer.orNew') : t('timer.whatWorking')}
               </label>
               <input
                 value={task}
@@ -189,7 +262,7 @@ export default function StudyTimerModal({ onClose, onDone, onActivityChange }: P
                   setTask(e.target.value)
                   setSelected(null)
                 }}
-                placeholder="e.g. Math homework"
+                placeholder={t('timer.placeholder')}
                 disabled={running}
                 className="px-input mb-4 w-full text-sm disabled:opacity-60"
               />
@@ -201,21 +274,19 @@ export default function StudyTimerModal({ onClose, onDone, onActivityChange }: P
               <div className="mt-4 flex gap-2">
                 {!running ? (
                   <button onClick={start} disabled={!task.trim()} className="px-btn flex-1">
-                    ▶ {sec > 0 ? 'Resume' : 'Start'}
+                    ▶ {sec > 0 ? t('timer.resume') : t('timer.start')}
                   </button>
                 ) : (
-                  <button onClick={() => setRunning(false)} className="px-btn px-btn-amber flex-1">
-                    ⏸ Pause
+                  <button onClick={pause} className="px-btn px-btn-amber flex-1">
+                    ⏸ {t('timer.pause')}
                   </button>
                 )}
                 <button onClick={finish} disabled={saving || sec < 1} className="px-btn flex-1">
-                  {saving ? 'Saving…' : '⏹ Finish'}
+                  {saving ? t('common.saving') : `⏹ ${t('timer.finish')}`}
                 </button>
               </div>
               <p className="mt-3 text-center text-xs text-[color:var(--color-faint)]">
-                {selected
-                  ? 'Finishing completes this to-do & banks its reward.'
-                  : 'AI rewards you based on the task & time when you finish.'}
+                {selected ? t('timer.todoReward') : t('timer.aiReward')}
               </p>
             </>
           )}

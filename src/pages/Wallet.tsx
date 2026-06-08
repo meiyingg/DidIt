@@ -8,14 +8,8 @@ import Container from '../components/Container'
 import { Label, Panel, StatCard } from '../components/ui'
 import Coin from '../components/Coin'
 import Icon from '../components/Icon'
+import { useLang } from '../lib/i18n'
 
-const LABELS: Record<WalletLog['type'], string> = {
-  task_reward: 'Task reward',
-  study_reward: 'Study reward',
-  daily_deduction: 'Daily cost',
-  purchase: 'Purchase',
-  adjustment: 'Adjustment',
-}
 const ICONS: Record<WalletLog['type'], string> = {
   task_reward: 'icon-tasks',
   study_reward: 'icon-study',
@@ -33,6 +27,7 @@ interface DayGroup {
 export default function Wallet() {
   const { user } = useAuth()
   const { profile } = useProfile()
+  const { t, locale } = useLang()
   const [logs, setLogs] = useState<WalletLog[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -73,25 +68,25 @@ export default function Wallet() {
   return (
     <Container className="animate-fade-up">
       <header className="mb-5">
-        <Label>Money</Label>
+        <Label>{t('wallet.money')}</Label>
         <h1 className="font-pixel mt-1 flex items-center gap-2 text-2xl font-bold text-[color:var(--color-ink)]">
-          <Coin className="h-6 w-6" /> Wallet
+          <Coin className="h-6 w-6" /> {t('wallet.title')}
         </h1>
       </header>
 
       <div className="mb-4 grid grid-cols-3 gap-3">
         <StatCard
           emoji={<Coin className="h-6 w-6" />}
-          label="Balance"
+          label={t('common.balance')}
           tile="#fff1c9"
           value={money(profile?.balance ?? 0)}
           valueClass={(profile?.balance ?? 0) < 0 ? 'text-[color:var(--color-berry)]' : 'text-[color:var(--color-ink)]'}
         />
-        <StatCard emoji={<Icon src="icon-earned" className="h-6 w-6" />} label="Earned" tile="#dff3d2" value={money(earned)} valueClass="text-[color:var(--color-grass-dark)]" />
-        <StatCard emoji={<Icon src="icon-spent" className="h-6 w-6" />} label="Spent" tile="#fde2cf" value={money(spent)} valueClass="text-[color:var(--color-berry)]" />
+        <StatCard emoji={<Icon src="icon-earned" className="h-6 w-6" />} label={t('wallet.earned')} tile="#dff3d2" value={money(earned)} valueClass="text-[color:var(--color-grass-dark)]" />
+        <StatCard emoji={<Icon src="icon-spent" className="h-6 w-6" />} label={t('wallet.spent')} tile="#fde2cf" value={money(spent)} valueClass="text-[color:var(--color-berry)]" />
       </div>
 
-      <Panel title="Transactions" icon={<Icon src="icon-book" />} color="amber" bodyClass="p-0">
+      <Panel title={t('wallet.transactions')} icon={<Icon src="icon-book" />} color="amber" bodyClass="p-0">
         {loading ? (
           <div className="space-y-2 p-4">
             {[0, 1, 2, 3].map((i) => (
@@ -101,14 +96,14 @@ export default function Wallet() {
         ) : groups.length === 0 ? (
           <div className="p-8 text-center">
             <img src="/assets/empty-wallet.png" alt="" className="mx-auto h-24 w-24 object-contain opacity-90" />
-            <p className="mt-2 text-sm text-[color:var(--color-muted)]">No transactions yet.</p>
+            <p className="mt-2 text-sm text-[color:var(--color-muted)]">{t('wallet.empty')}</p>
           </div>
         ) : (
           groups.map((g) => (
             <div key={g.date}>
               <div className="flex items-center justify-between bg-[#f6ead0] px-4 py-1.5">
                 <span className="font-pixel text-xs font-bold text-[color:var(--color-muted)]">
-                  {new Date(g.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                  {new Date(g.date + 'T00:00:00').toLocaleDateString(locale, { weekday: 'short', month: 'short', day: 'numeric' })}
                 </span>
                 <span className={`font-pixel text-xs font-bold ${g.net >= 0 ? 'text-[color:var(--color-grass-dark)]' : 'text-[color:var(--color-berry)]'}`}>
                   {g.net >= 0 ? '+' : ''}
@@ -122,9 +117,9 @@ export default function Wallet() {
                     <li key={l.id} className="flex items-center gap-3 px-4 py-2.5">
                       <Icon src={ICONS[l.type]} className="h-5 w-5" />
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm text-[color:var(--color-ink)]">{l.note || LABELS[l.type]}</p>
+                        <p className="truncate text-sm text-[color:var(--color-ink)]">{l.note || t(`wallet.type.${l.type}`)}</p>
                         <p className="text-[11px] text-[color:var(--color-faint)]">
-                          {LABELS[l.type]} · {shortTime(l.created_at)}
+                          {t(`wallet.type.${l.type}`)} · {shortTime(l.created_at)}
                         </p>
                       </div>
                       <span className={`px-coin shrink-0 ${positive ? '' : '!border-[#e7a3a3] !bg-[#ffe2e2] !text-[color:var(--color-berry)]'}`}>

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
+import { useLang } from '../lib/i18n'
 import { Panel } from './ui'
 
 interface Props {
@@ -11,6 +12,7 @@ interface Props {
 /** Daily journal editor for a single date — loads the existing entry and upserts on save. */
 export default function DiaryEditor({ date }: Props) {
   const { user } = useAuth()
+  const { t } = useLang()
   const [content, setContent] = useState('')
   const [loaded, setLoaded] = useState('') // last value persisted/fetched, for the dirty check
   const [loading, setLoading] = useState(true)
@@ -81,7 +83,7 @@ export default function DiaryEditor({ date }: Props) {
   }
 
   return (
-    <Panel title="Today's journal" icon={<img src="/assets/icon-journal.png" alt="" className="h-5 w-5 object-contain" />} color="purple">
+    <Panel title={t('diary.title')} icon={<img src="/assets/icon-journal.png" alt="" className="h-5 w-5 object-contain" />} color="purple">
       <textarea
         value={content}
         onChange={(e) => {
@@ -90,20 +92,20 @@ export default function DiaryEditor({ date }: Props) {
         }}
         disabled={loading || !user}
         rows={5}
-        placeholder="How was your day? What's on your mind?"
+        placeholder={t('diary.placeholder')}
         className="w-full rounded-lg border-2 border-[#c9a772] bg-[#fffdf5] px-3 py-2 text-sm text-[color:var(--color-ink)] outline-none focus:border-[#9268c9] disabled:opacity-60"
       />
 
       <div className="mt-3 flex items-center justify-between gap-3">
         <span className="text-xs">
           {loading ? (
-            <span className="text-[color:var(--color-faint)]">Loading…</span>
+            <span className="text-[color:var(--color-faint)]">{t('common.loading')}</span>
           ) : savedAt ? (
-            <span className="font-pixel font-bold text-[color:var(--color-grass-dark)]">Saved ✓</span>
+            <span className="font-pixel font-bold text-[color:var(--color-grass-dark)]">{t('profile.saved')}</span>
           ) : dirty ? (
-            <span className="text-[color:var(--color-muted)]">Unsaved changes</span>
+            <span className="text-[color:var(--color-muted)]">{t('diary.unsaved')}</span>
           ) : (
-            <span className="text-[color:var(--color-faint)]">All changes saved</span>
+            <span className="text-[color:var(--color-faint)]">{t('diary.allSaved')}</span>
           )}
         </span>
 
@@ -112,7 +114,7 @@ export default function DiaryEditor({ date }: Props) {
           disabled={saving || !dirty || !user || loading}
           className="px-btn shrink-0 text-sm"
         >
-          {saving ? 'Saving…' : 'Save'}
+          {saving ? t('common.saving') : t('common.save')}
         </button>
       </div>
     </Panel>

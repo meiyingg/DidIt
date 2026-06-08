@@ -1,10 +1,8 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
+import { useLang } from '../lib/i18n'
 import { Panel } from '../components/ui'
-
-const FALLBACK_SUMMARY =
-  "A fresh day begins. Yesterday is behind you — take one small step, keep your streak alive, and be kind to yourself. You've got this!"
 
 /** Local 'YYYY-MM-DD' for the day before today. */
 function yesterdayLocal(): string {
@@ -24,18 +22,20 @@ interface Props {
  */
 export default function DailySummaryModal({ onClose }: Props) {
   const { user } = useAuth()
+  const { t, lang } = useLang()
   const [summary, setSummary] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     let cancelled = false
+    const fallback = t('summary.fallback')
 
     async function run() {
       const yesterday = yesterdayLocal()
       try {
         if (!user) {
           if (!cancelled) {
-            setSummary(FALLBACK_SUMMARY)
+            setSummary(fallback)
             setLoading(false)
           }
           return
@@ -61,16 +61,16 @@ export default function DailySummaryModal({ onClose }: Props) {
         const tasksDone = rows.filter((r) => r.done).length
 
         const { data } = await supabase.functions.invoke('daily-summary', {
-          body: { diary: diaryContent, tasksDone, tasksTotal, date: yesterday },
+          body: { diary: diaryContent, tasksDone, tasksTotal, date: yesterday, lang },
         })
 
         if (!cancelled) {
-          setSummary((data as { summary?: string })?.summary ?? FALLBACK_SUMMARY)
+          setSummary((data as { summary?: string })?.summary ?? fallback)
           setLoading(false)
         }
       } catch {
         if (!cancelled) {
-          setSummary(FALLBACK_SUMMARY)
+          setSummary(fallback)
           setLoading(false)
         }
       }
@@ -80,12 +80,13 @@ export default function DailySummaryModal({ onClose }: Props) {
     return () => {
       cancelled = true
     }
-  }, [user])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, lang])
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-md">
       <Panel
-        title="Good morning recap"
+        title={t('summary.title')}
         icon={<img src="/assets/icon-sun.png" alt="" className="h-5 w-5 object-contain" />}
         color="blue"
         className="w-full max-w-sm"
@@ -109,16 +110,16 @@ export default function DailySummaryModal({ onClose }: Props) {
           {loading ? (
             <div className="flex items-center gap-2 py-6 text-[color:var(--color-muted)]">
               <img src="/assets/loading.png" alt="" className="h-6 w-6 animate-spin object-contain" />
-              <p className="font-pixel text-sm">Thinking about yesterday…</p>
+              <p className="font-pixel text-sm">{t('summary.thinking')}</p>
             </div>
           ) : (
             <p className="whitespace-pre-line py-2 text-sm leading-relaxed text-[color:var(--color-ink)]">
-              {summary ?? FALLBACK_SUMMARY}
+              {summary ?? t('summary.fallback')}
             </p>
           )}
 
           <button onClick={onClose} disabled={loading} className="px-btn mt-4 flex w-full items-center justify-center gap-1.5 disabled:opacity-60">
-            Start the day <img src="/assets/icon-sun.png" alt="" className="h-4 w-4 object-contain" />
+            {t('summary.startDay')} <img src="/assets/icon-sun.png" alt="" className="h-4 w-4 object-contain" />
           </button>
         </div>
       </Panel>

@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
+import { useLang } from '../lib/i18n'
 
 /** A compact live clock plaque for the world scene. */
 export default function Clock() {
+  const { locale } = useLang()
   const [now, setNow] = useState(new Date())
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000)
@@ -11,7 +13,7 @@ export default function Clock() {
   const h = now.getHours().toString().padStart(2, '0')
   const m = now.getMinutes().toString().padStart(2, '0')
   const s = now.getSeconds().toString().padStart(2, '0')
-  const date = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+  const date = now.toLocaleDateString(locale, { weekday: 'short', month: 'short', day: 'numeric' })
 
   return (
     <div className="flex items-center gap-2.5 rounded-full border-2 border-[#6b4a24] bg-[#fff5dd]/95 px-4 py-2 shadow">

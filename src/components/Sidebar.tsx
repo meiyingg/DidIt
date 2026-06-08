@@ -5,20 +5,15 @@ import { useAuth } from '../contexts/AuthContext'
 import { useProfile } from '../contexts/ProfileContext'
 import { charImg, DEFAULT_CHARACTER } from '../lib/characters'
 import { computeStreak } from '../lib/streak'
-import { TIPS } from '../lib/tips'
+import { dailyTip } from '../lib/tips'
 import { money } from '../lib/format'
+import { useLang } from '../lib/i18n'
 import { NAV } from './navItems'
-
-function dailyTip(): string {
-  const now = new Date()
-  const start = new Date(now.getFullYear(), 0, 0)
-  const doy = Math.floor((now.getTime() - start.getTime()) / 86400000)
-  return TIPS[doy % TIPS.length]
-}
 
 export default function Sidebar() {
   const { user } = useAuth()
   const { profile } = useProfile()
+  const { t, lang } = useLang()
   const negative = (profile?.balance ?? 0) < 0
   const [streak, setStreak] = useState({ current: 0, best: 0 })
 
@@ -110,7 +105,7 @@ export default function Sidebar() {
                   <img src={img} alt="" className="h-10 w-10 object-contain drop-shadow-sm transition-transform duration-200 group-hover:scale-110" draggable={false} />
                 </span>
                 <span className="font-pixel text-sm font-bold tracking-wide">
-                  {label}
+                  {t(label)}
                 </span>
               </>
             )}
@@ -120,9 +115,9 @@ export default function Sidebar() {
 
       {/* daily tip card */}
       <div className="mt-auto flex justify-center pb-1">
-        <div 
-          className="relative w-[150px] h-[186px] select-none filter drop-shadow-[0_4px_6px_rgba(0,0,0,0.5)] transition-all duration-300 hover:scale-105 hover:-rotate-1"
-          style={{ 
+        <div
+          className="relative w-[150px] h-[186px] origin-bottom select-none filter drop-shadow-[0_4px_6px_rgba(0,0,0,0.5)] transition-all duration-300 hover:z-20 hover:scale-[1.45] hover:-rotate-2 hover:drop-shadow-[0_10px_18px_rgba(0,0,0,0.55)]"
+          style={{
             backgroundImage: "url('/assets/pixel_art_card_4.png')", 
             backgroundSize: '100% 100%',
             backgroundRepeat: 'no-repeat'
@@ -131,7 +126,7 @@ export default function Sidebar() {
           {/* Top-Right Tag */}
           <div className="absolute top-[9px] right-[9px] z-10">
             <span className="font-pixel text-[7px] font-bold uppercase tracking-widest text-[#7c4d12] bg-[#fff5dd]/90 px-1 py-0.5 rounded border border-[#b28247]/30 shadow-sm">
-              Tip
+              {lang === 'zh' ? '贴士' : 'Tip'}
             </span>
           </div>
 
@@ -142,7 +137,7 @@ export default function Sidebar() {
                 className="font-pixel text-center text-[11px] font-bold leading-snug text-[#2c1802] drop-shadow-[0_1px_0_rgba(255,255,255,0.85)] overflow-y-auto max-h-[85px] scrollbar-none"
                 style={{ wordBreak: 'break-word' }}
               >
-                "{dailyTip()}"
+                "{dailyTip(lang)}"
               </p>
             </div>
           </div>

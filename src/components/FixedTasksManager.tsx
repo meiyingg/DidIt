@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import type { FixedTask } from '../lib/types'
 import { money } from '../lib/format'
+import { useLang } from '../lib/i18n'
 
 interface Props {
   fixedTasks: FixedTask[]
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export default function FixedTasksManager({ fixedTasks, onAdd, onRemove, onClose }: Props) {
+  const { t } = useLang()
   const [name, setName] = useState('')
   const [busy, setBusy] = useState(false)
 
@@ -36,7 +38,7 @@ export default function FixedTasksManager({ fixedTasks, onAdd, onRemove, onClose
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-1 flex items-center justify-between">
-          <h2 className="text-base font-bold tracking-tight text-zinc-900">Daily required tasks</h2>
+          <h2 className="text-base font-bold tracking-tight text-zinc-900">{t('fixed.title')}</h2>
           <button
             onClick={onClose}
             className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-700"
@@ -46,13 +48,13 @@ export default function FixedTasksManager({ fixedTasks, onAdd, onRemove, onClose
           </button>
         </div>
         <p className="mb-4 text-sm text-zinc-500">
-          These appear automatically every day — your daily must-dos to stay in the black.
+          {t('fixed.desc')}
         </p>
 
         <ul className="mb-4 space-y-2">
           {fixedTasks.length === 0 && (
             <li className="rounded-xl border border-dashed border-zinc-200 px-4 py-5 text-center text-sm text-zinc-400">
-              No required tasks yet — add your first below.
+              {t('fixed.empty')}
             </li>
           )}
           {fixedTasks.map((ft) => (
@@ -78,7 +80,7 @@ export default function FixedTasksManager({ fixedTasks, onAdd, onRemove, onClose
         <form onSubmit={submit} className="flex gap-2">
           <input
             type="text"
-            placeholder="e.g. Exercise 30 min — AI prices it"
+            placeholder={t('fixed.placeholder')}
             value={name}
             onChange={(e) => setName(e.target.value)}
             disabled={busy}
@@ -89,7 +91,7 @@ export default function FixedTasksManager({ fixedTasks, onAdd, onRemove, onClose
             disabled={busy || !name.trim()}
             className="shrink-0 rounded-lg bg-zinc-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-zinc-800 active:scale-[0.98] disabled:opacity-50"
           >
-            {busy ? 'Pricing…' : 'Add'}
+            {busy ? t('common.pricing') : t('common.add')}
           </button>
         </form>
       </div>

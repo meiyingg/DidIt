@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useProfile } from '../contexts/ProfileContext'
 import { CHARACTERS, DEFAULT_CHARACTER, charImg } from '../lib/characters'
 import { money } from '../lib/format'
+import { useLang } from '../lib/i18n'
 import Container from '../components/Container'
 import { Panel, StatCard } from '../components/ui'
 import Icon from '../components/Icon'
@@ -12,6 +13,7 @@ import Coin from '../components/Coin'
 export default function Profile() {
   const { user, signOut } = useAuth()
   const { profile, refresh } = useProfile()
+  const { t } = useLang()
   const [name, setName] = useState('')
   const [bio, setBio] = useState('')
   const [saving, setSaving] = useState(false)
@@ -61,9 +63,9 @@ export default function Profile() {
   return (
     <Container className="animate-fade-up space-y-4">
       <header className="flex items-center justify-between">
-        <h1 className="font-pixel text-2xl font-bold text-[color:var(--color-ink)]">My Profile</h1>
+        <h1 className="font-pixel text-2xl font-bold text-[color:var(--color-ink)]">{t('profile.title')}</h1>
         <button onClick={signOut} className="px-btn px-btn-amber text-sm">
-          Sign out
+          {t('common.signout')}
         </button>
       </header>
 
@@ -80,7 +82,7 @@ export default function Profile() {
         </div>
         <div className="min-w-0 flex-1">
           <p className="font-pixel truncate text-xl font-bold text-[color:var(--color-ink)]">{profile?.username ?? 'You'}</p>
-          <p className="font-pixel mt-0.5 text-xs text-[color:var(--color-muted)]">Playing as {charName}</p>
+          <p className="font-pixel mt-0.5 text-xs text-[color:var(--color-muted)]">{t('profile.playingAs', { name: charName })}</p>
           <p className="font-pixel mt-1.5 flex items-center gap-1.5 text-lg font-bold">
             <Coin className="h-5 w-5" />
             <span className={(profile?.balance ?? 0) < 0 ? 'text-[color:var(--color-berry)]' : 'text-[color:var(--color-grass-dark)]'}>
@@ -93,37 +95,35 @@ export default function Profile() {
 
       {/* stats */}
       <div className="grid grid-cols-3 gap-3">
-        <StatCard emoji={<Icon src="icon-tasks" className="h-6 w-6" />} label="Tasks done" tile="#dff3d2" value={stats.tasksDone} />
-        <StatCard emoji={<Icon src="icon-timer" className="h-6 w-6" />} label="Study time" tile="#d9ecff" value={`${Math.floor(stats.studyMin / 60)}h ${stats.studyMin % 60}m`} />
-        <StatCard emoji={<Icon src="icon-study" className="h-6 w-6" />} label="Sessions" tile="#fff1c9" value={stats.sessions} />
+        <StatCard emoji={<Icon src="icon-tasks" className="h-6 w-6" />} label={t('profile.tasksDone')} tile="#dff3d2" value={stats.tasksDone} />
+        <StatCard emoji={<Icon src="icon-timer" className="h-6 w-6" />} label={t('profile.studyTime')} tile="#d9ecff" value={`${Math.floor(stats.studyMin / 60)}h ${stats.studyMin % 60}m`} />
+        <StatCard emoji={<Icon src="icon-study" className="h-6 w-6" />} label={t('profile.sessions')} tile="#fff1c9" value={stats.sessions} />
       </div>
 
       {/* edit */}
-      <Panel title="Edit profile" icon={<Icon src="icon-edit" />} color="blue">
-        <label className="font-pixel mb-1 block text-xs font-bold uppercase text-[color:var(--color-muted)]">Display name</label>
-        <input value={name} onChange={(e) => setName(e.target.value)} className="px-input mb-3 w-full text-sm" placeholder="Your name" />
+      <Panel title={t('profile.editProfile')} icon={<Icon src="icon-edit" />} color="blue">
+        <label className="font-pixel mb-1 block text-xs font-bold uppercase text-[color:var(--color-muted)]">{t('common.displayName')}</label>
+        <input value={name} onChange={(e) => setName(e.target.value)} className="px-input mb-3 w-full text-sm" placeholder={t('profile.namePlaceholder')} />
 
-        <label className="font-pixel mb-1 block text-xs font-bold uppercase text-[color:var(--color-muted)]">Bio</label>
+        <label className="font-pixel mb-1 block text-xs font-bold uppercase text-[color:var(--color-muted)]">{t('profile.bio')}</label>
         <textarea
           value={bio}
           onChange={(e) => setBio(e.target.value)}
           rows={3}
           maxLength={200}
-          placeholder="A line about you…"
+          placeholder={t('profile.bioPlaceholder')}
           className="mb-3 w-full rounded-lg border-2 border-[#c9a772] bg-[#fffdf5] px-3 py-2 text-sm text-[color:var(--color-ink)] outline-none focus:border-[#4a90d9]"
         />
 
         <div className="flex items-center gap-3">
           <button onClick={save} disabled={saving || !name.trim() || !dirty} className="px-btn text-sm">
-            {saving ? 'Saving…' : 'Save'}
+            {saving ? t('common.saving') : t('common.save')}
           </button>
-          {saved && <span className="font-pixel text-sm text-[color:var(--color-grass-dark)]">Saved ✓</span>}
+          {saved && <span className="font-pixel text-sm text-[color:var(--color-grass-dark)]">{t('profile.saved')}</span>}
         </div>
       </Panel>
 
-      <p className="text-center text-xs text-[color:var(--color-faint)]">
-        Your character is chosen at signup and can’t be changed.
-      </p>
+      <p className="text-center text-xs text-[color:var(--color-faint)]">{t('profile.charLocked')}</p>
     </Container>
   )
 }

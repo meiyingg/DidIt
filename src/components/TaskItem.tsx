@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Check } from 'lucide-react'
 import type { Task } from '../lib/types'
 import { money } from '../lib/format'
+import { useLang } from '../lib/i18n'
 import Coin from './Coin'
 
 interface Props {
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export default function TaskItem({ task, onComplete }: Props) {
+  const { t } = useLang()
   const [busy, setBusy] = useState(false)
 
   async function handle() {
@@ -42,7 +44,7 @@ export default function TaskItem({ task, onComplete }: Props) {
 
       {task.type === 'required' && (
         <span className="font-pixel shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-700">
-          ★ Req
+          ★ {t('task.required')}
         </span>
       )}
 

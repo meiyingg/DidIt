@@ -1,10 +1,12 @@
 import { useState, type FormEvent } from 'react'
+import { useLang } from '../lib/i18n'
 
 interface Props {
   onAdd: (name: string) => Promise<void>
 }
 
 export default function AddTaskForm({ onAdd }: Props) {
+  const { t } = useLang()
   const [name, setName] = useState('')
   const [busy, setBusy] = useState(false)
 
@@ -25,14 +27,14 @@ export default function AddTaskForm({ onAdd }: Props) {
     <form onSubmit={submit} className="flex gap-2">
       <input
         type="text"
-        placeholder="Add a quest — AI sets the reward…"
+        placeholder={t('cal.addQuest')}
         value={name}
         onChange={(e) => setName(e.target.value)}
         disabled={busy}
         className="px-input min-w-0 flex-1 text-sm disabled:opacity-60"
       />
       <button type="submit" disabled={busy || !name.trim()} className="px-btn shrink-0 text-sm">
-        {busy ? '…' : '+ Add'}
+        {busy ? '…' : `+ ${t('common.add')}`}
       </button>
     </form>
   )

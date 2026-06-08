@@ -1,6 +1,7 @@
 import { useEffect, useRef, type MouseEvent } from 'react'
 import type { FloatingEmote, Peer } from '../../lib/useWorld'
 import { charImg } from '../../lib/characters'
+import { useLang } from '../../lib/i18n'
 
 const CHAR_H = 104
 
@@ -27,6 +28,7 @@ interface Props {
 }
 
 export default function CssWorld({ peers, messages, emotes, muted, onPoke, onSelfClick, onGroundMove }: Props) {
+  const { t } = useLang()
   const videoRef = useRef<HTMLVideoElement>(null)
 
   // unmuting must follow a user gesture (the sound toggle) — then ensure it plays
@@ -73,7 +75,7 @@ export default function CssWorld({ peers, messages, emotes, muted, onPoke, onSel
             }}
             className="group absolute z-10 -translate-x-1/2 -translate-y-full transition-[left,top] duration-700 ease-linear focus:outline-none"
             style={{ left: `${peer.x}%`, top: `${peer.y}%`, cursor: 'pointer' }}
-            title={peer.isMe ? 'Start focus timer' : `Poke ${peer.username}`}
+            title={peer.isMe ? t('world.startTimer') : t('world.pokeName', { name: peer.username })}
           >
             {/* floating emotes */}
             {myEmotes.map((em) => (
@@ -127,6 +129,13 @@ export default function CssWorld({ peers, messages, emotes, muted, onPoke, onSel
                 style={{ filter: 'drop-shadow(0 3px 3px rgba(0,0,0,0.35))' }}
                 onError={(e) => ((e.currentTarget as HTMLImageElement).src = '/assets/char.png')}
               />
+              {!peer.isMe && (
+                <img
+                  src="/assets/icon-poke.png"
+                  alt=""
+                  className="pointer-events-none absolute -right-1 top-2 h-7 w-7 origin-bottom-left rotate-12 object-contain opacity-0 drop-shadow-[0_2px_3px_rgba(0,0,0,0.4)] transition-all duration-200 group-hover:-translate-y-1 group-hover:opacity-100 group-active:scale-90"
+                />
+              )}
             </div>
           </button>
         )
