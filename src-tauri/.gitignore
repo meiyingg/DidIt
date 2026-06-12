@@ -1,0 +1,8 @@
+# Rust build output
+/target
+
+# Tauri-generated icons (created in CI by `tauri icon`)
+/icons
+
+# Mobile projects + schemas are generated in CI by `tauri android init`
+/gen

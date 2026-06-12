@@ -1,0 +1,20 @@
+[package]
+name = "didit"
+version = "0.1.0"
+description = "DidIt — stay disciplined with friends"
+authors = ["DidIt"]
+edition = "2021"
+
+# `cdylib` is required for the Android/iOS shared library; `staticlib` for iOS;
+# `rlib` so the desktop binary (main.rs) can link the same code.
+[lib]
+name = "didit_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

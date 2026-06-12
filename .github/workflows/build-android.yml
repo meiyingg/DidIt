@@ -1,0 +1,75 @@
+name: Build Android APK
+
+# Run manually from the Actions tab, or automatically when you push a v* tag.
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Set up Android NDK
+        id: ndk
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r26d
+          add-to-path: false
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install Rust + Android target
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android
+
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Generate app icons
+        run: pnpm tauri icon src-tauri/app-icon.png
+
+      - name: Initialise Android project
+        run: pnpm tauri android init
+        env:
+          NDK_HOME: ${{ steps.ndk.outputs.ndk-path }}
+
+      # Debug build → auto-signed with Gradle's debug key, so it installs on a
+      # phone directly (no keystore needed). arm64 covers virtually all real phones.
+      - name: Build APK
+        run: pnpm tauri android build --apk --debug --target aarch64
+        env:
+          NDK_HOME: ${{ steps.ndk.outputs.ndk-path }}
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: didit-android-apk
+          path: src-tauri/gen/android/app/build/outputs/apk/**/*.apk
+          if-no-files-found: error
