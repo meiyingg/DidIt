@@ -3,6 +3,7 @@ import { useAuth } from './contexts/AuthContext'
 import { ProfileProvider } from './contexts/ProfileContext'
 import Layout from './components/Layout'
 import Login from './pages/Login'
+import ResetPassword from './pages/ResetPassword'
 import Home from './pages/Home'
 import Calendar from './pages/Calendar'
 import Shop from './pages/Shop'
@@ -15,9 +16,12 @@ function FullScreenMessage({ text }: { text: string }) {
 }
 
 export default function App() {
-  const { session, loading } = useAuth()
+  const { session, loading, recovery } = useAuth()
 
   if (loading) return <FullScreenMessage text="Loading…" />
+
+  // Arrived via a password-reset email link — let them set a new password first.
+  if (recovery) return <ResetPassword />
 
   if (!session) {
     return (
