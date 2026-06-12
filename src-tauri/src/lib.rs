@@ -4,6 +4,7 @@ use tauri::{
     image::Image,
     menu::{MenuBuilder, MenuItemBuilder},
     tray::TrayIconBuilder,
+    Manager,
     WindowEvent,
 };
 
