@@ -112,21 +112,21 @@ export default function WorldScene({ name, balance, doneCount, total, streak }: 
       </div>
 
       {/* balance plaque */}
-      <div className="absolute right-3 top-3 flex items-center gap-2.5 rounded-2xl border-[3px] border-[#6b4a24] bg-[#fff5dd]/95 px-3.5 py-2 shadow-[0_4px_0_#3a2614]">
-        <img src="/assets/coin.png" alt="" className="h-10 w-10 object-contain" draggable={false} />
+      <div className="absolute right-3 top-3 flex items-center gap-2 rounded-2xl border-[3px] border-[#6b4a24] bg-[#fff5dd]/95 px-2.5 py-1.5 shadow-[0_4px_0_#3a2614] md:gap-2.5 md:px-3.5 md:py-2">
+        <img src="/assets/coin.png" alt="" className="h-7 w-7 object-contain md:h-10 md:w-10" draggable={false} />
         <div className="text-right">
-          <p className="font-pixel text-[10px] font-bold uppercase tracking-wide text-[color:var(--color-muted)]">{t('common.balance')}</p>
+          <p className="font-pixel text-[9px] font-bold uppercase tracking-wide text-[color:var(--color-muted)] md:text-[10px]">{t('common.balance')}</p>
           <NumberTicker
             value={balance}
             decimalPlaces={2}
             prefix="¥"
-            className={`font-pixel block text-2xl font-bold leading-none ${balance < 0 ? 'text-[color:var(--color-berry)]' : 'text-[color:var(--color-grass-dark)]'}`}
+            className={`font-pixel block text-lg font-bold leading-none md:text-2xl ${balance < 0 ? 'text-[color:var(--color-berry)]' : 'text-[color:var(--color-grass-dark)]'}`}
           />
         </div>
       </div>
 
-      {/* emote bar */}
-      <div className="absolute bottom-16 left-1/2 flex -translate-x-1/2 gap-1.5 rounded-full border-2 border-[#6b4a24] bg-[#fff5dd]/95 px-2 py-1.5 shadow-lg">
+      {/* emote bar — lifted above the bottom tab bar on mobile */}
+      <div className="absolute bottom-[8.5rem] left-1/2 flex -translate-x-1/2 gap-1.5 rounded-full border-2 border-[#6b4a24] bg-[#fff5dd]/95 px-2 py-1.5 shadow-lg md:bottom-16">
         {EMOTES.map((em) => (
           <button key={em} onClick={() => emote(em)} className="transition hover:scale-125" title="React">
             <img src={`/assets/${em}.png`} alt="" className="h-6 w-6 object-contain" />
@@ -134,8 +134,8 @@ export default function WorldScene({ name, balance, doneCount, total, streak }: 
         ))}
       </div>
 
-      {/* chat bar */}
-      <form onSubmit={sendChat} className="absolute inset-x-3 bottom-3 mx-auto flex max-w-md items-center gap-2 md:left-1/2 md:right-auto md:-translate-x-1/2">
+      {/* chat bar — sits above the tab bar on mobile, centered on desktop */}
+      <form onSubmit={sendChat} className="absolute inset-x-3 bottom-20 mx-auto flex max-w-md items-center gap-2 md:bottom-3 md:left-1/2 md:right-auto md:-translate-x-1/2">
         <input
           value={chat}
           onChange={(e) => setChat(e.target.value)}

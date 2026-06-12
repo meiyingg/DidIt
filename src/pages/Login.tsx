@@ -34,12 +34,14 @@ export default function Login() {
       } else if (mode === 'signin') {
         await signIn(email, password)
       } else {
-        await signUp(email, password, username.trim() || email.split('@')[0], character)
+        await signUp(email, password, username.trim(), character)
         setNotice(t('auth.created'))
         setMode('signin')
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('auth.error'))
+      const msg = err instanceof Error ? err.message : ''
+      // our own errors are i18n keys (e.g. "auth.noUser"); Supabase errors are plain text
+      setError(msg.startsWith('auth.') ? t(msg) : msg || t('auth.error'))
     } finally {
       setBusy(false)
     }
@@ -93,12 +95,16 @@ export default function Login() {
           )}
 
           <form onSubmit={onSubmit} className="space-y-3">
-            <input type="email" required autoComplete="email" placeholder={t('auth.email')} value={email} onChange={(e) => setEmail(e.target.value)} className={input} />
+            {mode === 'signin' && !forgot ? (
+              <input type="text" required autoComplete="username" placeholder={t('auth.account')} value={email} onChange={(e) => setEmail(e.target.value)} className={input} />
+            ) : (
+              <input type="email" required autoComplete="email" placeholder={t('auth.email')} value={email} onChange={(e) => setEmail(e.target.value)} className={input} />
+            )}
 
             {!forgot && (
               <>
                 {mode === 'signup' && (
-                  <input type="text" placeholder={t('common.displayName')} value={username} onChange={(e) => setUsername(e.target.value)} className={input} />
+                  <input type="text" required placeholder={t('auth.username')} value={username} onChange={(e) => setUsername(e.target.value)} className={input} />
                 )}
                 <input type="password" required minLength={6} autoComplete={mode === 'signin' ? 'current-password' : 'new-password'} placeholder={t('auth.password')} value={password} onChange={(e) => setPassword(e.target.value)} className={input} />
 

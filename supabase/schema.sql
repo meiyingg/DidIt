@@ -199,6 +199,21 @@ begin
 end $$;
 
 -- ============================================================================
+-- RPC: login_email — resolve a username to its account email so users can sign
+-- in with a username instead of an email. SECURITY DEFINER; returns only the one
+-- matching email (never exposes the table). Callable before auth (anon).
+-- ============================================================================
+create or replace function public.login_email(p_username text)
+returns text language sql security definer set search_path = public stable as $$
+  select u.email
+  from auth.users u
+  join public.profiles p on p.id = u.id
+  where lower(p.username) = lower(trim(p_username))
+  limit 1;
+$$;
+grant execute on function public.login_email(text) to anon, authenticated;
+
+-- ============================================================================
 -- Daily deduction: -300 to everyone at 00:00 Asia/Shanghai (16:00 UTC).
 -- Writes through the ledger (trigger updates each balance). Needs pg_cron.
 -- ============================================================================

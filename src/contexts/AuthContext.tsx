@@ -43,12 +43,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => sub.subscription.unsubscribe()
   }, [])
 
-  async function signIn(email: string, password: string) {
+  // Accepts a username OR an email. A username is resolved to its account email
+  // via the `login_email` RPC (SECURITY DEFINER), then signed in normally.
+  async function signIn(identifier: string, password: string) {
+    let email = identifier.trim()
+    if (!email.includes('@')) {
+      const { data, error } = await supabase.rpc('login_email', { p_username: email })
+      if (error) throw error
+      if (!data) throw new Error('auth.noUser')
+      email = data as string
+    }
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) throw error
   }
 
   async function signUp(email: string, password: string, username: string, character: string) {
+    // usernames are the login alias, so they must be unique
+    const { data: taken } = await supabase.rpc('login_email', { p_username: username })
+    if (taken) throw new Error('auth.usernameTaken')
     const { error } = await supabase.auth.signUp({
       email,
       password,
