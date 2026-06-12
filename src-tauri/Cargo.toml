@@ -22,3 +22,11 @@ serde_json = "1"
 # with E0119 conflicting trait impls. See tauri-apps/tauri#15525. 0.3.47 is the
 # last good release; remove this pin once tauri-utils ships a fix.
 time = "=0.3.47"
+
+# The Android APK uses `--debug` (so it's auto-signed and installs without a
+# keystore). Debug symbols make that build ~130MB, so drop them + strip + size-
+# optimise the native lib to shrink the APK while keeping it installable.
+[profile.dev]
+debug = false
+strip = true
+opt-level = "s"
