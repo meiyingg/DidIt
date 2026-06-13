@@ -74,12 +74,23 @@ export default function Calendar() {
   }
   async function addForDate(name: string, date: string) {
     if (!user) return
-    const reward = await priceTask(name)
-    const { error: e } = await supabase
+    // Insert immediately with a placeholder reward so the task shows up at once;
+    // the AI prices it in the background and patches the reward in afterwards.
+    const { data, error: e } = await supabase
       .from('tasks')
-      .insert({ user_id: user.id, name, type: 'custom', task_date: date, reward })
+      .insert({ user_id: user.id, name, type: 'custom', task_date: date, reward: 0 })
+      .select('id')
+      .single()
     if (e) return setError(e.message)
     await load()
+    if (data) {
+      priceTask(name)
+        .then(async (reward) => {
+          await supabase.from('tasks').update({ reward }).eq('id', data.id)
+          await load()
+        })
+        .catch(() => {})
+    }
   }
   async function addFixed(name: string) {
     if (!user) return
@@ -89,12 +100,23 @@ export default function Calendar() {
       setError(t('fixed.dup'))
       return
     }
-    const reward = await priceTask(trimmed)
-    const { error: e } = await supabase
+    const { data, error: e } = await supabase
       .from('fixed_tasks')
-      .insert({ user_id: user.id, name: trimmed, reward, sort_order: fixedTasks.length })
+      .insert({ user_id: user.id, name: trimmed, reward: 0, sort_order: fixedTasks.length })
+      .select('id')
+      .single()
     if (e) return setError(e.message)
     await load()
+    if (data) {
+      // price in the background, then patch the template + today's materialised copy
+      priceTask(trimmed)
+        .then(async (reward) => {
+          await supabase.from('fixed_tasks').update({ reward }).eq('id', data.id)
+          await supabase.from('tasks').update({ reward }).eq('source_fixed_id', data.id).eq('done', false)
+          await load()
+        })
+        .catch(() => {})
+    }
   }
   async function removeFixed(id: string) {
     if (!user) return

@@ -63,9 +63,15 @@ export default function FixedTasksManager({ fixedTasks, onAdd, onRemove, onClose
               >
                 <span className="min-w-0 truncate text-sm font-medium text-[color:var(--color-ink)]">{ft.name}</span>
                 <div className="flex shrink-0 items-center gap-2">
-                  <span className="px-coin">
-                    <img src="/assets/coin.png" alt="" className="h-3.5 w-3.5 object-contain" /> +{money(ft.reward).replace('¥', '')}
-                  </span>
+                  {Number(ft.reward) === 0 ? (
+                    <span className="font-pixel animate-pulse rounded-full bg-[#fff1c9] px-2 py-0.5 text-[10px] font-bold text-[#9a6a0c]">
+                      {t('common.pricing')}
+                    </span>
+                  ) : (
+                    <span className="px-coin">
+                      <img src="/assets/coin.png" alt="" className="h-3.5 w-3.5 object-contain" /> +{money(ft.reward).replace('¥', '')}
+                    </span>
+                  )}
                   <button
                     onClick={() => onRemove(ft.id)}
                     aria-label="Remove"

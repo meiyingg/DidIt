@@ -13,9 +13,12 @@ interface Props {
 export default function TaskItem({ task, onComplete }: Props) {
   const { t } = useLang()
   const [busy, setBusy] = useState(false)
+  // a just-added task is inserted with reward 0 and priced by the AI in the
+  // background; until the price lands, show "pricing…" and block completion.
+  const pricing = !task.done && Number(task.reward) === 0
 
   async function handle() {
-    if (task.done || busy) return
+    if (task.done || busy || pricing) return
     setBusy(true)
     try {
       await onComplete(task.id)
@@ -29,9 +32,9 @@ export default function TaskItem({ task, onComplete }: Props) {
       <button
         type="button"
         onClick={handle}
-        disabled={task.done || busy}
+        disabled={task.done || busy || pricing}
         aria-label={task.done ? 'Completed' : 'Mark complete'}
-        className={`px-check ${task.done ? 'is-done' : ''}`}
+        className={`px-check ${task.done ? 'is-done' : ''} ${pricing ? 'opacity-50' : ''}`}
       >
         <Check size={14} strokeWidth={4} />
       </button>
@@ -48,9 +51,15 @@ export default function TaskItem({ task, onComplete }: Props) {
         </span>
       )}
 
-      <span className={`px-coin shrink-0 ${task.done ? 'opacity-50' : ''}`}>
-        <Coin /> {money(task.reward).replace('¥', '')}
-      </span>
+      {pricing ? (
+        <span className="font-pixel shrink-0 animate-pulse rounded-full bg-[#fff1c9] px-2 py-0.5 text-[10px] font-bold text-[#9a6a0c]">
+          {t('common.pricing')}
+        </span>
+      ) : (
+        <span className={`px-coin shrink-0 ${task.done ? 'opacity-50' : ''}`}>
+          <Coin /> {money(task.reward).replace('¥', '')}
+        </span>
+      )}
     </li>
   )
 }
