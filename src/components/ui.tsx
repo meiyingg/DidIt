@@ -77,16 +77,18 @@ export function StatCard({
   valueClass?: string
 }) {
   return (
-    <div className="px-panel flex items-center gap-3 p-3">
+    // vertical + centered on phones (so the label/value get full width and don't
+    // clip in a narrow column); horizontal on sm+ screens.
+    <div className="px-panel flex flex-col items-center gap-1 p-2.5 text-center sm:flex-row sm:gap-3 sm:p-3 sm:text-left">
       <div
-        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border-2 border-black/10 text-2xl"
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border-2 border-black/10 sm:h-12 sm:w-12"
         style={{ background: tile }}
       >
         {emoji}
       </div>
       <div className="min-w-0">
         <Label>{label}</Label>
-        <p className={`font-pixel text-xl font-bold leading-tight ${valueClass}`}>{value}</p>
+        <p className={`font-pixel text-lg font-bold leading-tight sm:text-xl ${valueClass}`}>{value}</p>
       </div>
     </div>
   )

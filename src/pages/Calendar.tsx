@@ -207,7 +207,7 @@ export default function Calendar() {
                     {d}
                   </span>
                   {info && (
-                    <span className="font-pixel text-[10px] text-[color:var(--color-muted)]">
+                    <span className="font-pixel hidden text-[10px] text-[color:var(--color-muted)] sm:inline">
                       {info.done}/{info.total}
                     </span>
                   )}
