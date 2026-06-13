@@ -179,11 +179,20 @@ export default function Calendar() {
             const isToday = d === todayN
             const allDone = info && info.done === info.total && info.total > 0
             const partial = info && info.done < info.total
+            // compact dots for the mobile view (names don't fit in a 7-col phone grid)
+            const dots = info
+              ? info.tasks.map((task) => ({
+                  key: task.id,
+                  cls: task.done ? 'bg-[#4f8f2a]' : task.type === 'required' ? 'bg-[#e0a23c]' : 'bg-[#c9a772]',
+                }))
+              : d >= todayN
+                ? fixedTasks.map((ft) => ({ key: ft.id, cls: 'bg-[#e0a23c]/50' }))
+                : []
             return (
               <div
                 key={i}
                 onClick={() => setSelected(ds)}
-                className={`flex h-28 cursor-pointer flex-col overflow-hidden rounded-lg border-2 p-1.5 transition hover:brightness-[0.97] sm:h-36 ${
+                className={`flex h-16 cursor-pointer flex-col overflow-hidden rounded-lg border-2 p-1.5 transition hover:brightness-[0.97] sm:h-36 ${
                   allDone
                     ? 'border-[#6aa84f] bg-[#e3f3d6]'
                     : partial
@@ -204,8 +213,18 @@ export default function Calendar() {
                   )}
                 </div>
 
+                {/* mobile: compact dots (task names don't fit in a narrow 7-col grid) */}
+                {dots.length > 0 && (
+                  <div className="mt-1 flex flex-wrap content-start gap-1 sm:hidden">
+                    {dots.slice(0, 9).map((dot) => (
+                      <span key={dot.key} className={`h-1.5 w-1.5 rounded-full ${dot.cls}`} />
+                    ))}
+                  </div>
+                )}
+
+                {/* desktop: full task names */}
                 {info ? (
-                  <div className="mt-1 flex-1 space-y-0.5 overflow-y-auto pr-0.5">
+                  <div className="mt-1 hidden flex-1 space-y-0.5 overflow-y-auto pr-0.5 sm:block">
                     {info.tasks.map((task) => (
                       <div key={task.id} className="flex items-start gap-1 leading-tight">
                         <span
@@ -229,7 +248,7 @@ export default function Calendar() {
                   // upcoming days: preview the recurring required tasks (not yet materialised)
                   d >= todayN &&
                   fixedTasks.length > 0 && (
-                    <div className="mt-1 flex-1 space-y-0.5 overflow-y-auto pr-0.5 opacity-70">
+                    <div className="mt-1 hidden flex-1 space-y-0.5 overflow-y-auto pr-0.5 opacity-70 sm:block">
                       {fixedTasks.map((ft) => (
                         <div key={ft.id} className="flex items-start gap-1 leading-tight">
                           <span className="mt-px text-[9px] text-[#e0a23c]">◇</span>
