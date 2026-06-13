@@ -80,8 +80,8 @@ export default function WorldScene({ name, balance, doneCount, total, streak }: 
         <span className="font-pixel text-sm font-bold text-[color:var(--color-ink)]">{t('world.online', { count: peers.length })}</span>
       </div>
 
-      {/* clock */}
-      <div className="absolute left-1/2 top-3 -translate-x-1/2">
+      {/* clock — hidden on mobile (the phone status bar already shows the time) */}
+      <div className="absolute left-1/2 top-3 hidden -translate-x-1/2 md:block">
         <Clock />
       </div>
 
