@@ -50,13 +50,16 @@ jobs:
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
-      - name: Generate app icons
-        run: pnpm tauri icon src-tauri/app-icon.png
-
       - name: Initialise Android project
         run: pnpm tauri android init
         env:
           NDK_HOME: ${{ steps.ndk.outputs.ndk-path }}
+
+      # Must run AFTER `android init`: tauri icon only writes the launcher icons
+      # into the generated Android mipmaps when the project already exists.
+      # Otherwise the APK ships Tauri's default icon.
+      - name: Generate app icons
+        run: pnpm tauri icon src-tauri/app-icon.png
 
       # Debug build → auto-signed with Gradle's debug key, so it installs on a
       # phone directly (no keystore needed). arm64 covers virtually all real phones.
